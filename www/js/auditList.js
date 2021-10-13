@@ -103,7 +103,7 @@ define([
 			    "ProcessVariables":{
 			    	"empId":LocalStorage.getEmployeeId(),
 			    	"isSellerAudit": inswit.ISSELLERAUDIT,
-			    	"isAllStores": isAllStores,
+			    	"isAllStores": true,//isAllStores,
 			    	"date":LocalStorage.getLastUpdatedDate() || "",
 			    	"version": inswit.VERSION
 			    }
@@ -123,6 +123,8 @@ define([
 			    	LocalStorage.setAuditTimeLimit(cutOffTime);
 
 			    	var gpsTimer = (response.ProcessVariables.gpsCutOffTime || 1) * 1000;
+					inswit.ACCURACY_LIMIT=response.ProcessVariables.accuracyLimit ||100;
+					inswit.RETRY_COUNT=response.ProcessVariables.gpsRetryCount||3;
 			    	//inswit.TIMEOUT = parseInt(gpsTimer / 5); // Browser & GPS timeout configuration.
 					inswit.TIMEOUT = gpsTimer;
 					LocalStorage.setGpsTimeOut(inswit.TIMEOUT);

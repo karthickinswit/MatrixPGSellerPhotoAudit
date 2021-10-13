@@ -24,6 +24,8 @@ define([
 
 		startAudit: function(mId){
 			var that = this;
+			
+			
 
 			var pos = this.model.get("pos");
 			console.log("position"+pos.lat);
@@ -89,6 +91,18 @@ define([
             		});
 				});
             });
+		
+			// inswit.showLoaderEl("Fetching Location in to Matrix.. Please wait");
+
+			// if(ele.find(".photo_block").empty()){console.log("Image is here")}
+			// if(this.loginTimeout){
+			// 	clearTimeout(this.timeOut);
+			// 	this.timeOut = null;
+			// }
+
+			// this.loginTimeout = setTimeout(function(){
+			// 	inswit.hideLoaderEl();
+			// }, 30000);
 		},
 
 		resetAuditStatus: function(storeId, auditId) {
@@ -101,6 +115,7 @@ define([
 
 		continueAudit: function(event){
 			var that = this;
+
 
 //			var gpsDetect = cordova.require('cordova/plugin/gpsDetectionPlugin');
 //	        gpsDetect.checkGPS(function onGPSSuccess(on) {
@@ -118,6 +133,24 @@ define([
 				    }, "confirm", ["YES", "NO"]);
 	            }else{*/
 //            setTimeout(function(){
+			var startAuditTime=LocalStorage.getCurrentTime();
+			console.log(startAuditTime);
+			var PictureTime=Math.abs((new Date().getTime() - new Date(startAuditTime).getTime()) / 1000);
+			console.log(PictureTime);
+			if(PictureTime>(inswit.TIMEOUT)/1000)
+			{
+				var route = "#audits";
+				inswit.alert(inswit.ErrorMessages.gpsTimerExceed);
+				setTimeout(function(){
+					router.navigate(route, {
+						trigger: true
+					});
+				}, 1000);
+					
+			}
+			else{
+	
+			
 
                 var mId = $(event.currentTarget).attr("href");
                 var id = mId.split("-");
@@ -214,6 +247,8 @@ define([
                 }, function(a, e){
                     console.log(e);
                 });
+			}
+			
 //            });
 //	            }
 //	        }, function onGPSError(e) {
@@ -414,7 +449,9 @@ define([
 
 		takeStorePicture:function(event){
 			var that = this;
-
+			var mId = $(event.currentTarget).attr("href");
+			
+			
 			var mId = $(".continue_audit").attr("href");
 			var time = inswit.getCurrentTime();
             time = inswit.getFormattedDateTime(time);
@@ -441,6 +478,7 @@ define([
 					inswit.takePicture(callback, takeEl, retakeEl, storeCode, time);
 				});
 			});
+		
 		},
 
 		toggleConfirmationBlock: function(event) {

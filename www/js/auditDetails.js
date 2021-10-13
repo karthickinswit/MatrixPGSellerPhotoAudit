@@ -209,6 +209,7 @@ define([
 		startAudit: function(event) {
 			var that = this;
 			var mId = $(event.currentTarget).attr("href");
+			LocalStorage.setLocArray([]);
 			
 			var id = mId.split("-");
             var auditId = id[0];
@@ -225,6 +226,7 @@ define([
 					});
 				});
 			}, 0);
+			LocalStorage.setCurrentTime(new Date());
 
 		},
 
@@ -271,7 +273,7 @@ define([
 		    	timeout:inswit.TIMEOUT,
 		    	enableHighAccuracy:true
 			};
-			inswit.getLatLng(callback, options, false);
+			inswit.getLatLng(callback, options, false,auditId, storeId);
 
 		}
 		

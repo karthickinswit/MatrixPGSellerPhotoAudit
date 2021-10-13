@@ -264,7 +264,7 @@ define([
 		    	 * else
 		    	 * Retry the same file to upload once again
 		    	 */ 
-		    	//inswit.errorLog({"Info": "Photo Upload failed"});
+		    	inswit.errorLog({"Info": "Photo Upload failed"});
 
 		    	if(e.code == FileTransferError.FILE_NOT_FOUND_ERR) {
 		    		console.log("Image not found!");
@@ -354,7 +354,7 @@ define([
 
 			var success = checkConnection();
 		   	if(!success) {
-		   		inswit.hideLoaderEl();
+		   		inswit.hideLoaderEl();	
 		   		inswit.alert("No Internet Connection!", "Alert");
 		   		return;
 		   	}

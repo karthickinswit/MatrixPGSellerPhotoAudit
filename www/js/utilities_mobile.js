@@ -1,7 +1,7 @@
 //var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
 //var PROJECTID = "97677c1832bc11e5a9bb0050569ccb08"; //demo
-var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
-//var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
+//var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
+var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
 var inswit = {
 
 	URI: "https://www.appiyo.com/",
@@ -19,7 +19,7 @@ var inswit = {
 		password: "",
 	},
 	
-	VERSION : "2.6",
+	VERSION : "2.7",
 
 	ISSELLERAUDIT: true,
 
@@ -136,7 +136,7 @@ var inswit = {
 
 	TIMEOUT: 10000, //1sec(4*10sec=40sec)
 
-    MAXIMUM_AGE: 10000, //10s
+    MAXIMUM_AGE: 10000, //20s
 
     GPS_TIMER : 20000, //20 sec
 
@@ -145,6 +145,10 @@ var inswit = {
 	TIMER: 0,
 
 	TIMER_MIN: 0,
+
+	ACCURACY_LIMIT:100,
+
+	RETRY_COUNT:3,
 
 	uploadRetryLimit: 5,
 
@@ -178,7 +182,9 @@ var inswit = {
 
 		"invalidMobileTime": "Looks like mobile date&time settings are changed.\nYou can restart taking photos by selecting the store from store list.",
 
-		"checkProceed": "Please check Device Not executed to proceed."
+		"checkProceed": "Please check Device Not executed to proceed.",
+
+		"gpsTimerExceed": "Your auditing start time exceeds more than 30s.\nSo please restart this Audit."
 
 
 	},
@@ -557,18 +563,19 @@ var inswit = {
 	 * @param  {[type]}   retry    [description]
 	 * @return {[type]}   object   [description]
 	 */
-	getLatLng: function(callback, options, retry){
+	getLatLng: function(callback, options, retry,storeId,auditId){
 		var that = this;
 
 		options = {
 			enableHighAccuracy:true,
 			maximumAge:inswit.MAXIMUM_AGE,
-			timeout: LocalStorage.getGpsTimeOut(),
+			timeout:LocalStorage.getGpsTimeOut(),
 			priority: inswit.PRIORITY.PRIORITY_HIGH_ACCURACY,
 			fastInterval: 1000
 		};
+		var count=1;
 
-		that.getLatLngUsingLocationServices(callback, options, false);
+		that.getLatLngUsingLocationServices(callback, options, false,count,storeId,auditId);
 
 		return;
 
@@ -647,18 +654,89 @@ var inswit = {
 	 * @param  {[type]}   retry    [description]
 	 * @return {[type]}   object   [description]
 	 */
-	getLatLngUsingLocationServices: function(callback, options, retry){
+	getLatLngUsingLocationServices: function(callback, options, retry,count,storeId,auditId){
 		var that = this;
+		console.log(options);
 
 		cordova.plugins.locationServices.geolocation.getCurrentPosition(
+			// function(position) {
+			// //	inswit.errorLog({"Location-Parameters": JSON.stringify(options)});
+			// 	inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
+			// 	console.log(position);
+			// 	var pos = {
+			// 		lat: position.coords.latitude || "",
+			// 		lng: position.coords.longitude || "",
+			// 		accuracy: position.coords.accuracy || ""
+			// 	};
+			// 	callback(pos);
+			// 	return;
 			function(position) {
+				//inswit.errorLog({"Location-Parameters": JSON.stringify(options)});
+				
+				console.log(position);
 				var pos = {
 					lat: position.coords.latitude || "",
 					lng: position.coords.longitude || "",
-					accuracy: position.coords.accuracy || ""
+					accuracy: position.coords.accuracy || "",
+					timeStamp:position.timestamp
 				};
-				callback(pos);
+				if(LocalStorage.getLocArray())
+				{
+					var temp=[];var temp1=LocalStorage.getLocArray();
+					temp=temp1;
+					temp.push(pos);
+					LocalStorage.setLocArray(temp);
+
+				}
+				else
+				{ var a=[];
+					a.push(pos)
+					LocalStorage.setLocArray(a);
+				}
+				if(pos.accuracy>inswit.ACCURACY_LIMIT&&count<=inswit.RETRY_COUNT)
+				{
+					count+=1;
+					
+					that.getLatLngUsingLocationServices(callback, options, retry,count,storeId,auditId);
+				}
+				else{
+					if(pos.accuracy>100||count>3)
+					{
+						if(LocalStorage.getLocArray())
+						{ 
+							var a=LocalStorage.getLocArray();
+							a.sort(function (a, b) {
+								return a.accuracy - b.accuracy
+							});
+							callback(a[0]);
+							inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
+							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
+							LocalStorage.setLocArray([]);
+							return;
+						}
+						else {
+							callback(pos);
+							inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
+							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
+							LocalStorage.setLocArray([]);
+							return;
+						}
+					}
+					else
+					{
+						callback(pos);
+						callback(pos);
+						inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
+							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
+							LocalStorage.setLocArray([]);
 				return;
+
+					}
+				
+				}
+			
+				
+				
 
 			}, function(error) {
 				callback(error);

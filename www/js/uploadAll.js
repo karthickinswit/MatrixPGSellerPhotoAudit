@@ -126,9 +126,10 @@ define([
 			}
 
 			that.$el.find(".upload_all").addClass("clicked");
+			that.$el.find(".upload_all").prop("disabled", true);
 
 			that.upload(that.readyToUploadAudits, 0, that.readyToUploadAudits.length);
-
+			inswit.errorLog({"readyToUploadAudits": that.readyToUploadAudits});
 		},
 
 		retryBulkUpload: function(){
@@ -158,6 +159,7 @@ define([
 						failed += 1;
 						auditFailId.push(readyToUpload[i].id);
 						that.updateErrorFailureLog(auditFailId);
+						inswit.errorLog({"updateErrorFailureLog": auditFailId});
 					}
 				}
 
@@ -394,6 +396,7 @@ define([
 
 			//IF ImageURI is undefined just skip that image and going to next.
 			var imageURI = imageList[index].imageURI;
+			inswit.errorLog({"uploadPhoto-Log": imageURI});
 			if(!imageURI || imageURI == "undefined"){
 				that.uploadPhoto(
 					imageList, 
@@ -446,7 +449,7 @@ define([
 						//Retry the same image
 
 						that.updateErrorFailureLog({"Info-Retry-Log": result});
-
+						inswit.errorLog({"Info-Retry-Log": result});
 						that.uploadPhoto(
 							imageList, 
 							index, 
@@ -538,6 +541,7 @@ define([
 					}
 		    	}else{
 		    	    that.updateErrorFailureLog({"Info-Retry-Log": result});
+					inswit.errorLog({"Info-Retry-Log": result});
 
 		    		that.uploadPhoto(
 		    			imageList, 
@@ -771,7 +775,8 @@ define([
 								}
 							};
 
-							//inswit.errorLog({"Info": "Audit Upload initiated"});
+							inswit.errorLog({"Info": "Audit Upload initiated"});
+							inswit.errorLog({"processVariables": processVariables});
 
 							//Upload the Store details to the Appiyo server
 							inswit.executeProcess(processVariables, {
