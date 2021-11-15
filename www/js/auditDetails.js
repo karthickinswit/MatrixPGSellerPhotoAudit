@@ -52,6 +52,8 @@ define([
 								auditorName: result.adtr_name,
 								auditorCode: result.adtr_code,
 								date: formattedDate,
+								lat:result.lat,
+								lng:result.lng,
 								mId:mId
 							};
 				 
@@ -216,24 +218,122 @@ define([
             var storeId = id[1];
 			var channelId = id[2];
 
-
+			$(".android").mask("Capturing Geolocation... Please wait...", 100);
 			setTimeout(function(){
-				that.setGeoLocation(auditId, storeId, function(pos){
-					var route = "#audits/" + mId + "/continue/" + 
-					JSON.stringify(pos);
-					router.navigate(route, {
-						trigger: true
+				that.setGeoLocation(auditId, storeId, function(pos1){    //LOCATION FIRST ATTEMPT
+					var errInfo={"Location-Captured First Attempt": storeId+' '+auditId+' '+JSON.stringify(pos1)};
+					//populateErrorLogTable(db, auditId, storeId, JSON.stringify(errInfo));
+					inswit.logGPSError(auditId, storeId, errInfo);
+					inswit.errorLog(errInfo);
+					var storeLoc={};
+					findStoreLatLng(db, auditId, storeId,function(result){
+						storeLoc["lat"]=result.lat;
+						storeLoc["lng"]=result.lng;
+					
+						if(storeLoc&&storeLoc.lat!="")
+						{
+							var distance1=inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos1.lat,pos1.lng);
+							console.log(distance1);
+							if(distance1<=inswit.DISTANCE_LOWER_LIMIT)
+								{
+									var route = "#audits/" + mId + "/continue/" + 
+									JSON.stringify(pos1);
+									$(".android").unmask();
+									router.navigate(route, {
+													trigger: true
+													});
+							}
+							else 
+							{
+								// var pos1=pos;
+								 ///Second Attempt
+								 setTimeout(function(){
+									var callback = function(pos, retry){
+										
+										if(pos.lat){
+											var errInfo={"Location-Captured Second Attempt": storeId+' '+auditId+' '+JSON.stringify(pos)};
+											inswit.logGPSError(auditId, storeId, errInfo);
+											inswit.errorLog(errInfo);
+											var distance2=inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos.lat,pos.lng);
+											console.log(distance2);
+											var route = "#audits/" + mId + "/continue/" ; 
+											if(distance1<=distance2)
+											{
+												if(distance1>inswit.DISTANCE_HIGHER_LIMIT)
+												{
+													route+=JSON.stringify(pos1);
+												}
+												else 
+												{
+													pos1.lat=inswit.replaceLatLng(storeLoc.lat);
+													pos1.lng=inswit.replaceLatLng(storeLoc.lng);
+													pos1.isOverwrite=true;
+													route+=JSON.stringify(pos1);
+													
+												}
+											}
+											else
+											{
+												if(distance2>inswit.DISTANCE_HIGHER_LIMIT)
+												{
+													route+=JSON.stringify(pos);
+												}
+												else
+												{
+													pos.lat=inswit.replaceLatLng(storeLoc.lat);
+													pos.lng=inswit.replaceLatLng(storeLoc.lng);
+													pos.isOverwrite=true;
+													route+=JSON.stringify(pos);
+													
+												}
+											}
+											$(".android").unmask();
+											router.navigate(route, {
+											trigger: true
+											});
+											$(".android").unmask();
+										}else{
+											console.log("GPS error"+ pos);	
+											inswit.alert(""+pos.message);							
+											//Log GPS error in appiyo
+											inswit.logGPSError(auditId, storeId, pos);											
+											$(".android").unmask();
+										}
+									};
+									var options = {
+										maximumAge:inswit.MAXIMUM_AGE_SECOND,
+										timeout:inswit.TIMEOUT_SECOND,
+										enableHighAccuracy:inswit.IS_HIGH_ACCURACY_SECOND
+									};
+									inswit.getLatLng(callback, options, false,true);  //LOCATION SECOND ATTEMPT
+								},3000);
+								
+								
+							}
+			
+						}
+						else 
+						{
+
+							var route = "#audits/" + mId + "/continue/" + 
+							JSON.stringify(pos1);
+							$(".android").unmask();
+							router.navigate(route, {
+								trigger: true
+								});
+						}
 					});
+					
 				});
 			}, 0);
-			LocalStorage.setCurrentTime(new Date());
+			//LocalStorage.setCurrentTime(new Date());
 
 		},
 
 
 		//Get latitude and longitude position of the device
 		setGeoLocation: function(auditId, storeId, fn){
-			$(".android").mask("Capturing Geolocation... Please wait...", 100);
+			
 			var pos = {
                 lat: "",
                 lng: ""
@@ -256,9 +356,10 @@ define([
 					if(fn){
 						fn(pos);
 					}
-					$(".android").unmask();
+					
 				}else{
 					console.log("GPS error"+ pos);
+					//populateErrorLogTable(db, auditId, storeId, JSON.stringify(pos));
 					inswit.alert(""+pos.message);
 	
 					//Log GPS error in appiyo
@@ -269,11 +370,11 @@ define([
 			};
 
 			var options = {
-		    	maximumAge:inswit.MAXIMUM_AGE,
-		    	timeout:inswit.TIMEOUT,
-		    	enableHighAccuracy:true
+				maximumAge:inswit.MAXIMUM_AGE_FIRST,
+				timeout:inswit.TIMEOUT_FIRST,
+				enableHighAccuracy:inswit.IS_HIGH_ACCURACY_FIRST
 			};
-			inswit.getLatLng(callback, options, false,auditId, storeId);
+			inswit.getLatLng(callback, options, false);
 
 		}
 		

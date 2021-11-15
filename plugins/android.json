@@ -1,0 +1,70 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "com.adjust.sdk": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-advanced-geolocation": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-android-imei": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-androidx-adapter": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-camera": {
+      "ANDROID_SUPPORT_V4_VERSION": "27.+",
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-device": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-dialogs": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-file": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-file-transfer": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-inappbrowser": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-locationservices": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-network-information": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-request-location-accuracy": {
+      "PLAY_SERVICES_LOCATION_VERSION": "16.+",
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-splashscreen": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "cordova.plugins.diagnostic": {
+      "ANDROIDX_VERSION": "1.0.0",
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "org.apache.cordova.geolocation": {
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    },
+    "phonegap-plugin-barcodescanner": {
+      "ANDROID_SUPPORT_V4_VERSION": "27.+",
+      "PACKAGE_NAME": "com.appiyo.photoaudit"
+    }
+  },
+  "dependent_plugins": {}
+}

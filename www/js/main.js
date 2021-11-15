@@ -137,7 +137,7 @@ function backKeyDown(e) {
         router.navigate("/audits", {
             trigger: true
         });
-    }else if(location.hash.lastIndexOf("products") != -1|| location.hash.lastIndexOf("continue") != -1){
+    }else if(location.hash.lastIndexOf("products") != -1|| location.hash.lastIndexOf("continue") != -1||location.hash.lastIndexOf("locProceed") != -1){
         if(location.hash.lastIndexOf("products/") != -1){
             history.back();
         }else{

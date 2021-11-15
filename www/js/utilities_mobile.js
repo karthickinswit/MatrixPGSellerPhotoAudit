@@ -1,7 +1,7 @@
 //var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
 //var PROJECTID = "97677c1832bc11e5a9bb0050569ccb08"; //demo
-//var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
-var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
+var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
+//var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
 var inswit = {
 
 	URI: "https://www.appiyo.com/",
@@ -19,7 +19,7 @@ var inswit = {
 		password: "",
 	},
 	
-	VERSION : "2.7",
+	VERSION : "2.8",
 
 	ISSELLERAUDIT: true,
 
@@ -134,9 +134,19 @@ var inswit = {
 
 	GPS_TIMER : 60000,//1 min*/
 
-	TIMEOUT: 10000, //1sec(4*10sec=40sec)
+	TIMEOUT: 30000, //1sec(4*10sec=40sec)
 
-    MAXIMUM_AGE: 10000, //20s
+	TIMEOUT_FIRST:60000, //First Time 
+
+	TIMEOUT_SECOND:30000, //Second Time 
+
+	LatLngTimeOut:30,
+
+    MAXIMUM_AGE: 1000, //20s
+
+	MAXIMUM_AGE_FIRST: 000,
+
+	MAXIMUM_AGE_SECOND: 000,
 
     GPS_TIMER : 20000, //20 sec
 
@@ -152,12 +162,24 @@ var inswit = {
 
 	uploadRetryLimit: 5,
 
+	DISTANCE_LOWER_LIMIT : 100, //in Meters
+
+	DISTANCE_HIGHER_LIMIT : 10000, //in Meters
+
+	IS_HIGH_ACCURACY:true,
+
+	IS_HIGH_ACCURACY_FIRST:true,
+
+	IS_HIGH_ACCURACY_SECOND:false,
+
 	alertMessages : {
 		"logOut" : "Are you sure you want to logout?",
 
 		"restartAudit": "Already taken photos for this store will be deleted. Do you want to proceed?",
 
-		"no_execution" : "You have chosen NonExecution. Are you sure you want to continue?"
+		"no_execution" : "You have chosen NonExecution. Are you sure you want to continue?",
+
+		"gpsRetry" : "Your Location along with our Limit. Are you sure you want to continue?"
 	},
 
 	ErrorMessages: {
@@ -184,7 +206,11 @@ var inswit = {
 
 		"checkProceed": "Please check Device Not executed to proceed.",
 
-		"gpsTimerExceed": "Your auditing start time exceeds more than 30s.\nSo please restart this Audit."
+		"gpsTimerExceed": "Your auditing start time exceeds the limit.\nSo please restart this Audit.",
+
+		"gpsLocationFailed" : "We couldn't capture your exact Location.\nSo please try again the Same audit",
+
+		"enableGpsMessage": "Please turn on your data to get more improved location"
 
 
 	},
@@ -563,19 +589,18 @@ var inswit = {
 	 * @param  {[type]}   retry    [description]
 	 * @return {[type]}   object   [description]
 	 */
-	getLatLng: function(callback, options, retry,storeId,auditId){
+	getLatLng: function(callback, options, retry,isSecond){
 		var that = this;
 
-		options = {
-			enableHighAccuracy:true,
-			maximumAge:inswit.MAXIMUM_AGE,
-			timeout:LocalStorage.getGpsTimeOut(),
-			priority: inswit.PRIORITY.PRIORITY_HIGH_ACCURACY,
-			fastInterval: 1000
-		};
+		// options = {
+		// 	enableHighAccuracy:inswit.IS_HIGH_ACCURACY,
+		// 	maximumAge:inswit.MAXIMUM_AGE,
+		// 	timeout:LocalStorage.getGpsTimeOut(),
+		// 	// priority: inswit.PRIORITY.PRIORITY_HIGH_ACCURACY,
+		// 	// fastInterval: 1000
+		// };
 		var count=1;
-
-		that.getLatLngUsingLocationServices(callback, options, false,count,storeId,auditId);
+		that.getLatLngUsingLocationServices(callback, options, false,isSecond);
 
 		return;
 
@@ -645,7 +670,28 @@ var inswit = {
 			that.getLatLngUsingLocationServices(callback, options, false);
 		}
 	},
+	isNetInfo: function(callback){
+		var jsonObject={};
+	cordova.plugins.diagnostic.isNetworkLocationAvailable(function(enabled){
+		console.log("Network location is " + (enabled ? "enabled" : "disabled"));
+		jsonObject["netLocationInfo"]=enabled;
+		cordova.plugins.diagnostic.isGpsLocationAvailable(function(enable){
+			console.log("GPS location is " + (enable ? "enabled" : "disabled"));
+			jsonObject["gpsLocationInfo"]=enable;
+			callback(jsonObject);
+			return;
+		}, function(error){
+			console.error("The following error occurred: "+error);
+		});
+		
+		
+	}, function(error){
+		console.error("The following error occurred: "+error);
+		callback(error);
+		return;
 
+	});
+},
 	/**
 	 * Get Latitude and longitude using Location services plugin
 	 * Recursively it may try twice with 30 seconds timeout(totally 1 minute)
@@ -654,10 +700,33 @@ var inswit = {
 	 * @param  {[type]}   retry    [description]
 	 * @return {[type]}   object   [description]
 	 */
-	getLatLngUsingLocationServices: function(callback, options, retry,count,storeId,auditId){
+	getLatLngUsingLocationServices: function(callback, options, retry,isSecond){
 		var that = this;
 		console.log(options);
+		
 
+		  
+		//   function success(pos) {
+		// 	var crd = pos.coords;
+		  
+		// 	console.log(pos);  
+		// 	console.log('Your current position is:');
+		// 	console.log(`Latitude : ${crd.latitude}`);
+		// 	console.log(`Longitude: ${crd.longitude}`);
+		// 	console.log(`More or less ${crd.accuracy} meters.`);
+		//   }
+		  
+		//   function error(err) {
+		// 	console.warn(`ERROR(${err.code}): ${err.message}`);
+		//   }
+		  
+		 // navigator.geolocation.getCurrentPosition(success, error, options);
+		//  cordova.plugins.locationServices.geolocation.watchPosition(function(position) 
+		//  {console.log(position) },function(error) {},{enableHighAccuracy:true});
+		
+		 var timeoutSec=isSecond?3000:0;
+
+		 
 		cordova.plugins.locationServices.geolocation.getCurrentPosition(
 			// function(position) {
 			// //	inswit.errorLog({"Location-Parameters": JSON.stringify(options)});
@@ -671,71 +740,33 @@ var inswit = {
 			// 	callback(pos);
 			// 	return;
 			function(position) {
-				//inswit.errorLog({"Location-Parameters": JSON.stringify(options)});
 				
+				var distance;
 				console.log(position);
+				var infoObject={"Device Model":device.model,
+								"Device platform":device.platform,
+								"Device Manufacturer":device.manufacturer,
+								"Device Android Version":device.version,
+								"NetworkInfo":navigator.network.connection.type,
+								"isOnline":navigator.onLine
+								//"LocationInfo":that.isNetInfo(callback)
+								}
+				
 				var pos = {
 					lat: position.coords.latitude || "",
 					lng: position.coords.longitude || "",
 					accuracy: position.coords.accuracy || "",
-					timeStamp:position.timestamp
+					timeStamp:position.timestamp,
+					fetchedLat:position.coords.latitude||"",
+					fetchedLng:position.coords.longitude||"",
+					auditInfo:infoObject,
+					isOverwrite:false
 				};
-				if(LocalStorage.getLocArray())
-				{
-					var temp=[];var temp1=LocalStorage.getLocArray();
-					temp=temp1;
-					temp.push(pos);
-					LocalStorage.setLocArray(temp);
-
-				}
-				else
-				{ var a=[];
-					a.push(pos)
-					LocalStorage.setLocArray(a);
-				}
-				if(pos.accuracy>inswit.ACCURACY_LIMIT&&count<=inswit.RETRY_COUNT)
-				{
-					count+=1;
-					
-					that.getLatLngUsingLocationServices(callback, options, retry,count,storeId,auditId);
-				}
-				else{
-					if(pos.accuracy>100||count>3)
-					{
-						if(LocalStorage.getLocArray())
-						{ 
-							var a=LocalStorage.getLocArray();
-							a.sort(function (a, b) {
-								return a.accuracy - b.accuracy
-							});
-							callback(a[0]);
-							inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
-							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
-							LocalStorage.setLocArray([]);
-							return;
-						}
-						else {
-							callback(pos);
-							inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
-							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
-							LocalStorage.setLocArray([]);
-							return;
-						}
-					}
-					else
-					{
-						callback(pos);
-						callback(pos);
-						inswit.errorLog({"Location-Captured": storeId+' '+auditId+' '+JSON.stringify(position)});
-							inswit.errorLog({"Location-Array": LocalStorage.getLocArray()});
-							LocalStorage.setLocArray([]);
-				return;
-
-					}
-				
-				}
-			
-				
+		
+			callback(pos);
+			return;
+		
+		
 				
 
 			}, function(error) {
@@ -771,7 +802,71 @@ var inswit = {
 				// that.getLatLngUsingLocationServices(callback, options, true);
 
 		    }, options);
+		
+			
+			
+
+
 	},
+
+
+	calculateDistance:function(lat1, lon1, lat2, lon2)
+  {    
+	var that = this;
+	var R = 6371e3; // R is earth’s radius
+//    var lat1 = 23.18489670753479; // starting point lat
+//    var lat2 = 32.726601;         // ending point lat
+//    var lon1 = 72.62524545192719; // starting point lon
+//    var lon2 = 74.857025;         // ending point lon
+   var lat1radians = that.toRadians(lat1);
+   var lat2radians = that.toRadians(lat2);
+
+   var latRadians = that.toRadians(lat2-lat1);
+   var lonRadians = that.toRadians(lon2-lon1);
+
+   var a = Math.sin(latRadians/2) * Math.sin(latRadians/2) +
+        Math.cos(lat1radians) * Math.cos(lat2radians) *
+        Math.sin(lonRadians/2) * Math.sin(lonRadians/2);
+   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+   var d = R * c;
+   return d;
+   console.log(d)
+},
+
+toRadians:function(val){
+    var PI = 3.1415926535;
+    return val / 180.0 * PI;
+},
+ replaceLatLng:function(input){
+	 var that=this;
+	 if(!input||input=="") return input;
+	//console.log("l "+input);
+	var splitInput=input.toString().split(".");
+	//console.log("splitted Input "+splitInput[1])
+	input=splitInput[1];
+	var prefix = input.substr(0, 4);
+	//console.log("p "+prefix)
+	var suffix = input.substr(prefix.length-input.length);
+	
+	var masked = suffix.replace(suffix,that.randomNumber((suffix.length)));
+	var changedInput = prefix+masked;
+	//console.log("m "+masked);
+	//console.log("s "+suffix);
+	//console.log(splitInput[0]+'.'+changedInput);
+	return splitInput[0]+'.'+changedInput;
+	},
+	
+	
+	randomNumber:function(length) {
+		var text = "";
+		var possible = "123456789";
+		for (var i = 0; i < length; i++) {
+		  var sup = Math.floor(Math.random() * possible.length);
+		  text += i > 0 && sup == i ? "0" : possible.charAt(sup);
+		}
+		return Number(text);
+	  },
 
 
 	getMobileNetworkLatLng: function(callback, options, retry) {
@@ -816,6 +911,25 @@ var inswit = {
             }
         }, inswit.GPS_TIMER);
 	},
+
+	/**
+	 * 
+	 *Watch postion and clear watch
+
+	 */
+	watchPosition:function(){
+		var that=this;
+		 var c= cordova.plugins.locationServices.geolocation.getCurrentPosition(function(position) 
+	  {console.log(position) },function(error) {},{enableHighAccuracy:true});
+	  //console.log("Position"+c)
+	  //that.clearWatch(c);
+	},
+
+	clearWatch:function(watchId)
+	{
+		cordova.plugins.locationServices.geolocation.clearWatch(watchId);
+	},
+
 
 	/**
 	 * [setColorCode: It will set the color code for audlit list based on the channel type]
@@ -1320,6 +1434,15 @@ var inswit = {
 
         removePartialAudit(db, storeId);
 	 },
+	 randomNumber:function(length) {
+		var text = "";
+		var possible = "123456789";
+		for (var i = 0; i < length; i++) {
+		  var sup = Math.floor(Math.random() * possible.length);
+		  text += i > 0 && sup == i ? "0" : possible.charAt(sup);
+		}
+		return Number(text);
+	  },
 
 	logGPSError: function(auditId, storeId, gpsError) {
 		//this.$(".upload_container").show();
@@ -1356,20 +1479,20 @@ var inswit = {
 				populateErrorLogTable(db, auditId, storeId, JSON.stringify(gpsError), function(result){
 				}, function(error){
 				});
-				switch(error){
-					case 0:{
-						inswit.alert("No internet connection, please enable");
-						break;
-					}
-					case 1:{
-						inswit.alert("Check your network settings!");
-						break;
-					}
-					case 2:{
-						inswit.alert("Server Busy.Try Again!");
-						break;
-					}
-				}
+				// switch(error){
+				// 	case 0:{
+				// 		inswit.alert("No internet connection, please enable");
+				// 		break;
+				// 	}
+				// 	case 1:{
+				// 		inswit.alert("Check your network settings!");
+				// 		break;
+				// 	}
+				// 	case 2:{
+				// 		inswit.alert("Server Busy.Try Again!");
+				// 		break;
+				// 	}
+				// }
 			}
 		});
 	},

@@ -2,9 +2,15 @@
  * This method create table to completed audit details.
  */
 function createCompAuditTable(tx, success, error) {
-    var createStatement = "CREATE TABLE IF NOT EXISTS mxpg_comp_audits(store_id TEXT, id TEXT, comp_audit BOOLEAN, audited BOOLEAN, option_id TEXT, audit_id TEXT, store_image TEXT, lat TEXT, lng TEXT, store_image_id TEXT, accuracy TEXT)";
+    var createStatement = "CREATE TABLE IF NOT EXISTS mxpg_comp_audits(store_id TEXT, id TEXT, comp_audit BOOLEAN, audited BOOLEAN, option_id TEXT, audit_id TEXT, store_image TEXT, lat TEXT, lng TEXT, store_image_id TEXT, accuracy TEXT,fetched_lat TEXT,fetched_lng TEXT,loc_preview_image TEXT,loc_preview_image_id TEXT,audit_info TEXT,over_write TEXT)";
     tx.executeSql(createStatement, [], success, error);
     var createIndex = "CREATE UNIQUE INDEX compAuditIndex ON mxpg_comp_audits(audit_id, store_id)";
+    tx.executeSql(createIndex);
+}
+function createAuditPreviewTable(tx, success, error) {
+    var createStatement = "CREATE TABLE IF NOT EXISTS mxpg_audits_preview(store_id TEXT, id TEXT, audit_id TEXT, accuracy TEXT,fetched_lat TEXT,fetched_lng TEXT,loc_preview_image TEXT,loc_preview_image_id TEXT)";
+    tx.executeSql(createStatement, [], success, error);
+    var createIndex = "CREATE UNIQUE INDEX previewAuditIndex ON mxpg_audits_preview(audit_id, store_id)";
     tx.executeSql(createIndex);
 }
 
@@ -27,12 +33,18 @@ function createCompProductTable(tx, success, error) {
 
 function populateCompAuditTable(db, audit, callback, error) {
     db.transaction(function(tx){
-        tx.executeSql('INSERT OR replace INTO mxpg_comp_audits(store_id, id, comp_audit, audited, option_id, audit_id, store_image, lat, lng, store_image_id, accuracy) VALUES (?,?,?,?,?,?,?,?,?,?,?);',
-            [audit.storeId, audit.id, audit.isCompleted, audit.isContinued, audit.optionId, audit.auditId, audit.storeImage, audit.lat, audit.lng, audit.storeImageId, audit.accuracy]
+        tx.executeSql('INSERT OR replace INTO mxpg_comp_audits(store_id, id, comp_audit, audited, option_id, audit_id, store_image, lat, lng, store_image_id, accuracy,fetched_lat,fetched_lng,audit_info,over_write) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);',
+            [audit.storeId, audit.id, audit.isCompleted, audit.isContinued, audit.optionId, audit.auditId, audit.storeImage, audit.lat, audit.lng, audit.storeImageId, audit.accuracy,audit.fetchedLat,audit.fetchedLng,audit.auditInfo,audit.isOverwrite]
         , callback, error);
     });
 }
-
+function populatLocPreviewTable(db, audit, callback, error) {
+    db.transaction(function(tx){
+        tx.executeSql('INSERT OR replace INTO mxpg_audits_preview(store_id, id,audit_id,loc_preview_image) VALUES (?,?,?,?);',
+            [audit.storeId, audit.id,  audit.auditId,audit.locPreviewImage ]
+        , callback, error);
+    });
+}
 /**
  * This method Insert or Replace the record from Completed Product table of SQLite DB.
  * @param  {object} db
@@ -229,7 +241,26 @@ function selectCompletedAudit(db, mId, callback, error) {
     var storeId = id[1];
     var channelId = id[2];
 
-    var query = 'SELECT * FROM mxpg_comp_audits WHERE audit_id=? AND store_id=?';
+    var query = 'SELECT a.*,b.loc_preview_image,b.loc_preview_image_id from mxpg_comp_audits a left join mxpg_audits_preview b on a.store_id=b.store_id where a.audit_id=? AND a.store_id=?';
+    
+    db.transaction(function(tx){
+        tx.executeSql(query, [auditId, storeId], function(tx, response){
+            callback(response.rows);
+        }, function(a, e){
+            if(error){
+                error(a, e);
+            }
+        });
+    });
+}
+
+function selectPreviewAudit(db, mId, callback, error) {
+    var id = mId.split("-");
+    var auditId = id[0];
+    var storeId = id[1];
+    var channelId = id[2];
+
+    var query = 'SELECT * FROM mxpg_audits_preview WHERE audit_id=? AND store_id=?';
     
     db.transaction(function(tx){
         tx.executeSql(query, [auditId, storeId], function(tx, response){
@@ -300,6 +331,13 @@ function updateSignaturePhoto(db, auditId, storeId, imageURI){
 function updateStoreImageId(db, auditId, storeId, imageId, success, error){
     db.transaction(function(tx){
         tx.executeSql('UPDATE mxpg_comp_audits SET store_image_id=? WHERE audit_id=? AND store_id=?;',
+            [imageId, auditId, storeId], success, error
+        );
+    });
+}
+function updatePreviewImageId(db, auditId, storeId, imageId, success, error){
+    db.transaction(function(tx){
+        tx.executeSql('UPDATE mxpg_audits_preview SET loc_preview_image_id=? WHERE audit_id=? AND store_id=?;',
             [imageId, auditId, storeId], success, error
         );
     });

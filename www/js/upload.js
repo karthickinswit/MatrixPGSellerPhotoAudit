@@ -420,6 +420,8 @@ define([
 							var id = audit.item(0).id;
 							var latitude = audit.item(0).lat;
 							var longitude = audit.item(0).lng;
+							var fetchedLatitude=audit.item(0).fetched_lat;
+							var fetchedLongitude=audit.item(0).fetched_lng;
 
 							var processVariables = {
 								"projectId":inswit.UPLOAD_PROCESS.projectId,
@@ -435,6 +437,8 @@ define([
 									"option": auditStatus,
 									"latitude": latitude,
 									"longitude": longitude,
+									"fetchedLatitude":fetchedLatitude,
+									"fetchedLongitude":fetchedLongitude,
 									"storeImage":storeImage,
 									"updateStorePosition": updateStorePosition,
 									"version":inswit.VERSION

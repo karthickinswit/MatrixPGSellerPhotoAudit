@@ -57,6 +57,7 @@ define([
             			    }
             			}
             			LocalStorage.setAuditStatus(storeStatus);
+						LocalStorage.setCurrentTime(new Date());
 
 	            		var html = Mustache.to_html(template, {
 	            			"mId":mId,
@@ -135,9 +136,12 @@ define([
 //            setTimeout(function(){
 			var startAuditTime=LocalStorage.getCurrentTime();
 			console.log(startAuditTime);
-			var PictureTime=Math.abs((new Date().getTime() - new Date(startAuditTime).getTime()) / 1000);
+			var CurrentTime=new Date();
+			var PictureTime=Math.abs((CurrentTime.getTime() - new Date(startAuditTime).getTime()) / 1000);
 			console.log(PictureTime);
-			if(PictureTime>(inswit.TIMEOUT)/1000)
+			inswit.errorLog({"Locally Stored time": startAuditTime,"Continue Audit Time":CurrentTime,"Time Diff in Seconds":PictureTime,"LatLngTimeOut":inswit.LatLngTimeOut });
+			
+			if(PictureTime>(inswit.LatLngTimeOut))
 			{
 				var route = "#audits";
 				inswit.alert(inswit.ErrorMessages.gpsTimerExceed);
@@ -159,7 +163,7 @@ define([
 				var channelId = id[2];
 				var position = this.model.get("pos");
 
-
+				var callback = function(netInfo){
                 var dist = getDistributor(db, auditId, storeId, function(distributor){
 
                     var image = $(".photo_block img").attr("src");
@@ -187,6 +191,15 @@ define([
                                 }
                             }
                         }
+						// var infoObject={"Device Model":device.model,
+						// 				"Device platform":device.platform,
+						// 				"Device Manufacturer":device.manufacturer,
+						// 				"Device Android Version":device.version,
+						// 			"NetworkInfo":navigator.network.connection.type,
+						// 			"isOnline":navigator.onLine,
+						// 			"LocationInfo":netInfo
+						// 		}
+									
 
                         var audit = {};
                         audit.storeId = storeId;
@@ -202,7 +215,10 @@ define([
                         audit.storeImageId = "";
 						audit.signImageId = "";
 						audit.accuracy = position.accuracy;
-
+						audit.fetchedLat=position.fetchedLat;
+						audit.fetchedLng=position.fetchedLng;
+						audit.auditInfo=JSON.stringify(position.auditInfo);
+						audit.isOverwrite=position.isOverwrite;
                         /**
                          * Geolocation exists check done here because,
                          * There could be a possibility of multiple time revisit this page. So
@@ -247,6 +263,9 @@ define([
                 }, function(a, e){
                     console.log(e);
                 });
+			};
+			inswit.isNetInfo(callback);
+			
 			}
 			
 //            });
@@ -306,7 +325,11 @@ define([
 									}
 								}
 							}
-							
+							var infoObject={"Device":device,
+									"NetworkInfo":navigator.network.connection.type,
+									"isOnline":navigator.onLine,
+									"userAgent":navigator.userAgent}
+					
 							var audit = {};
 							audit.storeId = storeId;
 							audit.auditId = auditId;
@@ -321,6 +344,9 @@ define([
 							audit.storeImageId = "";
 							audit.signImageId = "";
 							audit.accuracy = position.accuracy;
+							audit.auditInfo=JSON.stringify(infoObject);
+							audit.isOverwrite=position.isOverwrite;
+
 
 							//Completed products need to cleared for audit status changed from 'YES' to 'NO'.
 							clearCompProducts(db, auditId, storeId, function(){

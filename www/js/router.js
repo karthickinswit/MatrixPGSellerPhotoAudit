@@ -40,7 +40,8 @@ define(["backbone", "bootstrap", "mustache"], function() {
             "audits/:id/products/:id" : "showNorms",
             "audits/:id/upload" : "onUploadAudit",
             "audits/upload/all" : "uploadAll",
-            "register" : "showRegister"
+            "register" : "showRegister",
+            "audits/:id/locProceed/:pos":"locProceed"
         },
 
         renderLogin: function() {
@@ -161,6 +162,29 @@ define(["backbone", "bootstrap", "mustache"], function() {
             });*/
 
 
+        },
+        locProceed: function(mId, pos){
+            var that = this;
+
+            var time = inswit.getCurrentTime();
+
+
+            LocalStorage.setServerTime(mId, time);
+
+            var position = JSON.parse(pos);
+
+            require(["locationProceed"], function(InitAudit) {
+                var InitAuditModel = new InitAudit.Model({
+                    "mId":mId,
+                    "pos": position
+                });
+                var InitAuditView = new InitAudit.View({
+                    model: InitAuditModel
+                });
+                InitAuditView.startAudit(mId);
+
+                that.appendView(InitAuditView);
+            });
         },
 
         showProducts: function(mId){

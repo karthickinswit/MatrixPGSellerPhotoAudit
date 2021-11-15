@@ -68,6 +68,18 @@ define([
 			}else{
 				this.storeName = "";
 			}
+			inswit.watchPosition();
+			
+			// var callback = function(pos, retry)
+			// {
+			// 	console.log(pos);
+			// };
+			// var options = {
+		    // 	maximumAge:inswit.MAXIMUM_AGE,
+		    // 	timeout:inswit.TIMEOUT,
+		    // 	enableHighAccuracy:true
+			// };
+			// inswit.getLatLng(callback, options);
 		},
 
 		loaderEl : $(".loader-container"),
@@ -88,13 +100,27 @@ define([
 				this.timeOut = null;
 			}
 
+			inswit.watchPosition();
+			
+			
+
 			this.timeOut = setTimeout(function(){
 				inswit.hideLoaderEl();
 			}, 30000);
+			// var callback = function(pos, retry){console.log(pos);};
+			// var options = {
+		    // 	maximumAge:inswit.MAXIMUM_AGE,
+		    // 	timeout:inswit.TIMEOUT,
+		    // 	enableHighAccuracy:true
+			// };
+			// inswit.getLatLng(callback, options,);
 		},
 
 		getAudits: function(event, isAllStores) {
 			var that = this;
+			LocalStorage.removeCurrentTime();
+			inswit.watchPosition();
+			
 
 			var processVariables = {
 			    "projectId":inswit.GET_ASSIGNED_AUDIT_PROCESS.projectId,
@@ -111,7 +137,7 @@ define([
 			
 			inswit.executeProcess(processVariables, {
 			    success: function(response){
-			        inswit.errorLog({"Audit-List-Response": response});
+			        inswit.errorLog({"Audit-List-Response": response,"timstamp":new Date()});
 
 			    	if(!response.ProcessVariables.status){
 			    		inswit.hideLoaderEl();
@@ -121,12 +147,21 @@ define([
 			    	}
 			    	var cutOffTime = response.ProcessVariables.cutOffTime;
 			    	LocalStorage.setAuditTimeLimit(cutOffTime);
-
+					inswit.MAXIMUM_AGE=response.ProcessVariables.maxAge||1000;
+					inswit.MAXIMUM_AGE_FIRST=response.ProcessVariables.maxAge||1000;
+					inswit.MAXIMUM_AGE_SECOND=response.ProcessVariables.maxAgeSecond||1000;
+					inswit.IS_HIGH_ACCURACY_FIRST=response.ProcessVariables.enableHighAccuracy||true;
+					inswit.IS_HIGH_ACCURACY_SECOND=response.ProcessVariables.enableHighAccuracySecond||true;
+					inswit.DISTANCE_LOWER_LIMIT=response.ProcessVariables.distanceLowerLimit || 100;
+					inswit.DISTANCE_HIGHER_LIMIT=response.ProcessVariables.distanceHigherLimit || 10000;
 			    	var gpsTimer = (response.ProcessVariables.gpsCutOffTime || 1) * 1000;
 					inswit.ACCURACY_LIMIT=response.ProcessVariables.accuracyLimit ||100;
 					inswit.RETRY_COUNT=response.ProcessVariables.gpsRetryCount||3;
 			    	//inswit.TIMEOUT = parseInt(gpsTimer / 5); // Browser & GPS timeout configuration.
 					inswit.TIMEOUT = gpsTimer;
+					inswit.TIMEOUT_FIRST=response.ProcessVariables.gpsCutOffTimeFirst||60000;
+					inswit.TIMEOUT_SECOND=response.ProcessVariables.gpsCutOffTimeSecond||30000;
+					inswit.LatLngTimeOut=response.ProcessVariables.latlongValid||30;
 					LocalStorage.setGpsTimeOut(inswit.TIMEOUT);
 			    	LocalStorage.setNetworkGpsTimeout(inswit.TIMEOUT); // Mobile Network Timeout configuration.
 
@@ -147,7 +182,7 @@ define([
 	                        		that.fetchAudit("", true, storesDetails, true);
 	                        		inswit.hideLoaderEl();
 		                        }
-							
+								deleteAllStoreTable(db);
 	                        	populateAllStoreTable(db, storesDetails, callback);
 
 		                    }else {
@@ -165,7 +200,7 @@ define([
                         		that.fetchAudit("", true, storesDetails, true);
                         		inswit.hideLoaderEl();
 	                        }
-						
+							deleteAllStoreTable(db);
                         	populateAllStoreTable(db, storesDetails, callback);
 
 	                    }else {

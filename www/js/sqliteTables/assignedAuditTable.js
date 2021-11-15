@@ -13,6 +13,13 @@ function createAllStoreTable(tx, success, error) {
  * @param  {function} callback function
  */
 
+ function deleteAllStoreTable(db, success, error) {
+    var deleteStatement = "DELETE TABLE mxpg_store";
+    db.transaction(function(tx){
+    tx.executeSql(deleteStatement, success, error);
+    });
+ }
+
 function populateAllStoreTable(db, storesDetails, callback, error) {
     var obj = "";
 
@@ -119,6 +126,24 @@ function findStore(db, auditId, storeId, fn) {
         });
     });
 }
+
+/*Findstore Lat Lng from Store Table*/
+function findStoreLatLng(db, auditId, storeId, fn) {
+
+    var select_query = "select lat,lng from mxpg_store where audit_id='" + auditId + "'AND store_id='" + storeId + "'";
+    db.transaction(function(tx){
+        tx.executeSql(select_query , [], function(tx, results) {
+            var storeLoc="";
+            if(results.rows.length > 0){
+                storeLoc = results.rows.item(0);
+                fn(storeLoc);
+            }else{
+                fn(storeLoc);
+            }
+        });
+    });
+}
+
 
 /**
  * This method Select the record from the All Store table in SQLite DB.

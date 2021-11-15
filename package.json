@@ -30,6 +30,7 @@
     "phonegap-plugin-barcodescanner": "^8.1.0"
   },
   "devDependencies": {
+    "cordova-android": "^9.1.0",
     "cordova-plugin-android-imei": "file:custom_plugin/cordova-plugin-android-imei",
     "cordova-plugin-androidx-adapter": "^1.1.3",
     "cordova-plugin-camera": "file:custom_plugin/cordova-plugin-camera",
@@ -64,6 +65,8 @@
         "ANDROIDX_VERSION": "1.0.0"
       }
     },
-    "platforms": []
+    "platforms": [
+      "android"
+    ]
   }
 }
