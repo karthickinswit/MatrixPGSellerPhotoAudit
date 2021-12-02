@@ -126,9 +126,10 @@ define([
 			}
 
 			that.$el.find(".upload_all").addClass("clicked");
+			that.$el.find(".upload_all").prop("disabled", true);
 
 			that.upload(that.readyToUploadAudits, 0, that.readyToUploadAudits.length);
-
+			//inswit.errorLog({"readyToUploadAudits": that.readyToUploadAudits});
 		},
 
 		retryBulkUpload: function(){
@@ -158,6 +159,7 @@ define([
 						failed += 1;
 						auditFailId.push(readyToUpload[i].id);
 						that.updateErrorFailureLog(auditFailId);
+						inswit.errorLog({"updateErrorFailureLog": auditFailId});
 					}
 				}
 
@@ -229,11 +231,16 @@ define([
             that.channelId = id[2];
            
             that.retry = 0;
-
+			
+			
+				
+				
 			selectCompletedAudit(db, mId, function(audit){
 			
 				if(audit.length > 0){
 					
+					
+
 					var storeImage = audit.item(0).store_image;
 					//var signImage = audit.item(0).sign_image;
 					var storeImageId = audit.item(0).store_image_id;
@@ -248,6 +255,22 @@ define([
 						"imageURI":storeImage,
 						"image":storeImageId
 					});
+					
+						var previewImage = audit.item(0).loc_preview_image;
+							//var signImage = audit.item(0).sign_image;
+							var previewImageId = audit.item(0).loc_preview_image_id;
+							//var signImageId = audit.item(0).sign_image_id;
+		
+							
+							imageList.push({
+								"auditId":that.auditId,
+								"storeId":that.storeId,
+								"productId":"previewImage",
+								"productName":"Store",
+								"imageURI":previewImage,
+								"image":previewImageId
+							});
+						
 
 					var completed = audit.item(0).comp_audit;
 					var audited = audit.item(0).audited;
@@ -322,6 +345,7 @@ define([
 							auditLength
 						);
 					}
+				
                 }else{
                 	that.upload(
                 		readyToUpload, 
@@ -337,6 +361,9 @@ define([
 				// inswit.hideLoaderEl();
 				// that.$el.find(".upload_all").removeClass("clicked");
 			});
+
+
+			
 		},
 
 		//Upload images one by one to the Alfresco Server
@@ -394,6 +421,7 @@ define([
 
 			//IF ImageURI is undefined just skip that image and going to next.
 			var imageURI = imageList[index].imageURI;
+			//inswit.errorLog({"uploadPhoto-Log": imageURI});
 			if(!imageURI || imageURI == "undefined"){
 				that.uploadPhoto(
 					imageList, 
@@ -446,7 +474,7 @@ define([
 						//Retry the same image
 
 						that.updateErrorFailureLog({"Info-Retry-Log": result});
-
+						inswit.errorLog({"Info-Retry-Log": result});
 						that.uploadPhoto(
 							imageList, 
 							index, 
@@ -459,8 +487,32 @@ define([
 					}
 					var image = result.info.id;
 					imageList[index].image = image;
+					if(productId == "previewImage"){
+						updatePreviewImageId(db, auditId, storeId, image, function(){
+							that.uploadPhoto(
+								imageList, 
+								index+1, 
+								length-1, 
+								false,
+								readyToUpload, 
+								currentAuditIndex,
+								auditLength);
+							return;
+							
+						}, function(a, e){
+							that.uploadPhoto(
+								imageList, 
+								index, 
+								length, 
+								false,
+								readyToUpload, 
+								currentAuditIndex,
+								auditLength);
+							return;
 
-					if(productId == "storeImage"){
+						});
+					}
+					else if(productId == "storeImage"){
 						updateStoreImageId(db, auditId, storeId, image, function(){
 							that.uploadPhoto(
 								imageList, 
@@ -538,6 +590,7 @@ define([
 					}
 		    	}else{
 		    	    that.updateErrorFailureLog({"Info-Retry-Log": result});
+					inswit.errorLog({"Info-Retry-Log": result});
 
 		    		that.uploadPhoto(
 		    			imageList, 
@@ -700,6 +753,9 @@ define([
 					var priority = product.priority;
 					var executionStatus = (product.non_execution == "true") ? true:false;
 					var qrCode = product.qr_code || "";
+					var imgCaptureTime=product.image_capture_time;
+					var imgCaptureTime2=product.image_capture_time2;
+					
 
 					var optPhotoId = "";
 					if(priority == 10){
@@ -718,7 +774,9 @@ define([
 						photoId:photoId,
 						optionalPhotoId:optPhotoId,
 						nonExecution: executionStatus,
-						qrCode: qrCode
+						qrCode: qrCode,
+						photoCaptureTime:imgCaptureTime,
+						optionalPhotoCaptureTime:imgCaptureTime2
 					}
 
 					auditDetails.push(detail);
@@ -744,11 +802,38 @@ define([
 			   		selectCompletedAudit(db, mId, function(audit){
 
 						if(audit.length > 0){
+							
+							
+								var previewImage="";
+								if(audit.item(0).loc_preview_image_id){
+									previewImage = inswit.URI + "d/drive/docs/" + audit.item(0).loc_preview_image_id;
+								}
+
 							var auditStatus = audit.item(0).option_id;		
 							var id = audit.item(0).id;
 							var latitude = audit.item(0).lat;
 							var longitude = audit.item(0).lng;
 							var accuracy = audit.item(0).accuracy;
+							var fetchedLatitude=audit.item(0).fetched_lat;
+							var fetchedLongitude=audit.item(0).fetched_lng;
+							var auditInfo=audit.item(0).audit_info;
+							var isOverwrite=audit.item(0).over_write;
+							var strImgCaptureTime=audit.item(0).img_capture_time||"";
+							var startAuditTime=audit.item(0).startTime||"";
+							var endAuditTime=audit.item(0).endTime||"";
+							var advancedLat=audit.item(0).advlat||"";
+							var advancedLng=audit.item(0).advlng||"";
+							var advancedTimeStamp=audit.item(0).advtimestamp||"";
+							var gpsTimeStamp=audit.item(0).timeStamp||"";
+							//advancedTimeStamp=new Date(advancedTimeStamp)?new Date(advancedTimeStamp).toLocaleString():"";
+							//gpsTimeStamp=new Date(gpsTimeStamp)?new Date(gpsTimeStamp).toLocaleString():"";
+							startAuditTime=new Date(startAuditTime).toLocaleString();
+							endAuditTime=new Date(endAuditTime).toLocaleString();
+
+
+
+							
+							
 
 							var processVariables = {
 								"projectId":inswit.UPLOAD_PROCESS.projectId,
@@ -765,13 +850,26 @@ define([
 									"latitude": latitude,
 									"longitude": longitude,
 									"storeImage":storeImage,
+									"fetchedLatitude":fetchedLatitude,
+									"fetchedLongitude":fetchedLongitude,
 									"updateStorePosition": updateStorePosition,
 									"version":inswit.VERSION,
-									"accuracy": accuracy
+									"accuracy": accuracy,
+									"previewImage":previewImage,
+									"auditInfo":auditInfo,
+									"isOverwrite:":isOverwrite,
+									"storeImageCaptureTime":strImgCaptureTime,
+									"startAuditTime":startAuditTime,
+									"endAuditTime":endAuditTime,
+									"advancedLat":(advancedLat=="undefined"||!advancedLat)?"":advancedLat,
+									"advancedLng":(advancedLng=="undefined"||!advancedLng)?"":advancedLng,
+									"advancedTimeStamp":(advancedTimeStamp=="undefined"||!advancedTimeStamp)?"":advancedTimeStamp,
+									"fetchedTimeStamp":(gpsTimeStamp=="undefined"||!gpsTimeStamp)?"":gpsTimeStamp,
 								}
 							};
 
 							//inswit.errorLog({"Info": "Audit Upload initiated"});
+							//inswit.errorLog({"processVariables": processVariables});
 
 							//Upload the Store details to the Appiyo server
 							inswit.executeProcess(processVariables, {
@@ -932,6 +1030,7 @@ define([
                                     }
 								}
 							});
+						
 						}
 					});
 			   	});

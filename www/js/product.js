@@ -99,8 +99,8 @@ define([
 	 			var callback = function(isYes){
 					$(event.currentTarget).removeClass("clicked");
 					if(isYes == 1){
-
-		   	           updateAuditStatus(db, auditId, storeId);
+						var auditEndTime=new Date();
+		   	           updateAuditStatus(db, auditId,auditEndTime, storeId);
 
 		   	            var route = "#audits/" + mId + "/upload";
 		   				router.navigate(route, {

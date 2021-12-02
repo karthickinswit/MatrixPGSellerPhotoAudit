@@ -24,6 +24,8 @@ define([
 
 		startAudit: function(mId){
 			var that = this;
+			
+			
 
 			var pos = this.model.get("pos");
 			console.log("position"+pos.lat);
@@ -55,6 +57,7 @@ define([
             			    }
             			}
             			LocalStorage.setAuditStatus(storeStatus);
+						LocalStorage.setCurrentTime(new Date());
 
 	            		var html = Mustache.to_html(template, {
 	            			"mId":mId,
@@ -89,6 +92,18 @@ define([
             		});
 				});
             });
+		
+			// inswit.showLoaderEl("Fetching Location in to Matrix.. Please wait");
+
+			// if(ele.find(".photo_block").empty()){console.log("Image is here")}
+			// if(this.loginTimeout){
+			// 	clearTimeout(this.timeOut);
+			// 	this.timeOut = null;
+			// }
+
+			// this.loginTimeout = setTimeout(function(){
+			// 	inswit.hideLoaderEl();
+			// }, 30000);
 		},
 
 		resetAuditStatus: function(storeId, auditId) {
@@ -101,6 +116,7 @@ define([
 
 		continueAudit: function(event){
 			var that = this;
+
 
 //			var gpsDetect = cordova.require('cordova/plugin/gpsDetectionPlugin');
 //	        gpsDetect.checkGPS(function onGPSSuccess(on) {
@@ -118,6 +134,28 @@ define([
 				    }, "confirm", ["YES", "NO"]);
 	            }else{*/
 //            setTimeout(function(){
+			var startAuditTime=LocalStorage.getCurrentTime();
+			inswit.START_AUDIT_TIME=startAuditTime;
+			console.log(startAuditTime);
+			var CurrentTime=new Date();
+			var PictureTime=Math.abs((CurrentTime.getTime() - new Date(startAuditTime).getTime()) / 1000);
+			console.log(PictureTime);
+			inswit.errorLog({"Locally Stored time": startAuditTime,"Continue Audit Time":CurrentTime,"Time Diff in Seconds":PictureTime,"LatLngTimeOut":inswit.LatLngTimeOut });
+			
+			if(PictureTime>(inswit.LatLngTimeOut))
+			{
+				var route = "#audits";
+				inswit.alert(inswit.ErrorMessages.gpsTimerExceed);
+				setTimeout(function(){
+					router.navigate(route, {
+						trigger: true
+					});
+				}, 1000);
+					
+			}
+			else{
+	
+			
 
                 var mId = $(event.currentTarget).attr("href");
                 var id = mId.split("-");
@@ -126,7 +164,7 @@ define([
 				var channelId = id[2];
 				var position = this.model.get("pos");
 
-
+				var callback = function(netInfo){
                 var dist = getDistributor(db, auditId, storeId, function(distributor){
 
                     var image = $(".photo_block img").attr("src");
@@ -154,6 +192,16 @@ define([
                                 }
                             }
                         }
+						selectAdvLatlng(db, auditId, storeId, function(advPos){
+						// var infoObject={"Device Model":device.model,
+						// 				"Device platform":device.platform,
+						// 				"Device Manufacturer":device.manufacturer,
+						// 				"Device Android Version":device.version,
+						// 			"NetworkInfo":navigator.network.connection.type,
+						// 			"isOnline":navigator.onLine,
+						// 			"LocationInfo":netInfo
+						// 		}
+									
 
                         var audit = {};
                         audit.storeId = storeId;
@@ -169,8 +217,18 @@ define([
                         audit.storeImageId = "";
 						audit.signImageId = "";
 						audit.accuracy = position.accuracy;
-
-                        /**
+						audit.fetchedLat=position.fetchedLat;
+						audit.fetchedLng=position.fetchedLng;
+						audit.auditInfo=JSON.stringify(position.auditInfo);
+						audit.isOverwrite=position.isOverwrite;
+						audit.imgCaptureTime=(image.replace(/^.*[\\\/]/, '').split('.')[0])||"";
+						audit.timeStamp=((JSON.stringify(position.timeStamp)));//.includes("."))?((position.timeStamp).split('.')[0]):position.timeStamp;
+                        audit.startTime=inswit.START_AUDIT_TIME;
+						//audit.advLatLng=(position.advLatLng=="undefined"||position.advLatLng==undefined)?"":JSON.stringify(position.advLatLng);
+						audit.advLat=advPos.length>0?advPos[0].lat:"";
+						audit.advLng=advPos.length>0?advPos[0].lng:"";
+						audit.advTimeStamp=advPos.length>0?advPos[0].timestamp:"";
+						/**
                          * Geolocation exists check done here because,
                          * There could be a possibility of multiple time revisit this page. So
                          * No need to capture every time if Geolocation is already captured.
@@ -210,10 +268,16 @@ define([
                         }, function(a, e){
                             //Error callback of selectCompletedAudit function.
                         });
+					});
                     });
                 }, function(a, e){
                     console.log(e);
                 });
+			};
+			inswit.isNetInfo(callback);
+			
+			}
+			
 //            });
 //	            }
 //	        }, function onGPSError(e) {
@@ -271,7 +335,11 @@ define([
 									}
 								}
 							}
-							
+							var infoObject={"Device":device,
+									"NetworkInfo":navigator.network.connection.type,
+									"isOnline":navigator.onLine,
+									"userAgent":navigator.userAgent}
+					
 							var audit = {};
 							audit.storeId = storeId;
 							audit.auditId = auditId;
@@ -286,6 +354,10 @@ define([
 							audit.storeImageId = "";
 							audit.signImageId = "";
 							audit.accuracy = position.accuracy;
+							audit.auditInfo=JSON.stringify(infoObject);
+							audit.isOverwrite=position.isOverwrite;
+							audit.imgCaptureTime=new Date(image.replace(/^.*[\\\/]/, '').split('.')[0]);
+
 
 							//Completed products need to cleared for audit status changed from 'YES' to 'NO'.
 							clearCompProducts(db, auditId, storeId, function(){
@@ -414,7 +486,9 @@ define([
 
 		takeStorePicture:function(event){
 			var that = this;
-
+			var mId = $(event.currentTarget).attr("href");
+			
+			
 			var mId = $(".continue_audit").attr("href");
 			var time = inswit.getCurrentTime();
             time = inswit.getFormattedDateTime(time);
@@ -441,6 +515,7 @@ define([
 					inswit.takePicture(callback, takeEl, retakeEl, storeCode, time);
 				});
 			});
+		
 		},
 
 		toggleConfirmationBlock: function(event) {

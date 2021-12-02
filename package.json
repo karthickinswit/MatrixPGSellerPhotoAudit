@@ -14,27 +14,27 @@
   "license": "Apache-2.0",
   "dependencies": {
     "com.adjust.sdk": "^4.22.1",
+    "cordova": "9.0.0",
     "cordova-plugin-advanced-geolocation": "^1.6.2",
-    "cordova-plugin-androidx": "^2.0.0",
-    "cordova-plugin-androidx-adapter": "^1.1.1",
     "cordova-plugin-device": "^2.0.3",
     "cordova-plugin-dialogs": "^2.0.2",
     "cordova-plugin-file": "^6.0.2",
     "cordova-plugin-file-transfer": "^1.7.1",
     "cordova-plugin-inappbrowser": "^4.0.0",
-    "cordova-plugin-locationservices": "^2.1.0",
     "cordova-plugin-network-information": "^2.0.2",
     "cordova-plugin-request-location-accuracy": "^2.3.0",
     "cordova-plugin-splashscreen": "^6.0.0",
     "cordova.plugins.diagnostic": "^6.0.2",
-    "org.apache.cordova.geolocation": "^0.3.6",
     "phonegap-plugin-barcodescanner": "^8.1.0"
   },
   "devDependencies": {
-    "cordova-android": "^9.0.0",
+    "cordova-android": "^9.1.0",
     "cordova-plugin-android-imei": "file:custom_plugin/cordova-plugin-android-imei",
+    "cordova-plugin-androidx-adapter": "^1.1.3",
     "cordova-plugin-camera": "file:custom_plugin/cordova-plugin-camera",
-    "cordova-plugin-whitelist": "^1.3.4"
+    "cordova-plugin-locationservices": "^2.1.0",
+    "cordova-plugin-whitelist": "^1.3.5",
+    "org.apache.cordova.geolocation": "^0.3.6"
   },
   "cordova": {
     "plugins": {
@@ -49,16 +49,21 @@
       "cordova-plugin-advanced-geolocation": {},
       "cordova-plugin-locationservices": {},
       "org.apache.cordova.geolocation": {},
-      "cordova.plugins.diagnostic": {},
       "com.adjust.sdk": {},
-      "cordova-plugin-androidx": {},
-      "cordova-plugin-androidx-adapter": {},
-      "phonegap-plugin-barcodescanner": {},
-      "cordova-plugin-request-location-accuracy": {},
+      "phonegap-plugin-barcodescanner": {
+        "ANDROID_SUPPORT_V4_VERSION": "27.+"
+      },
+      "cordova-plugin-request-location-accuracy": {
+        "PLAY_SERVICES_LOCATION_VERSION": "16.+"
+      },
       "cordova-plugin-camera": {
         "ANDROID_SUPPORT_V4_VERSION": "27.+"
       },
-      "cordova-plugin-android-imei": {}
+      "cordova-plugin-android-imei": {},
+      "cordova-plugin-androidx-adapter": {},
+      "cordova.plugins.diagnostic": {
+        "ANDROIDX_VERSION": "1.0.0"
+      }
     },
     "platforms": [
       "android"

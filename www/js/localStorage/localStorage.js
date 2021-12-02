@@ -125,5 +125,25 @@ var LocalStorage = {
 
     getNetworkGpsTimeout: function() {
         return parseInt(localStorage.getItem("gpsNetworkTimeout"));
+    },
+    setCurrentTime:function(timeStamp)
+    {
+      localStorage.setItem("currentTime", timeStamp);
+    },
+    getCurrentTime:function()
+    {
+      return localStorage.getItem("currentTime");
+    },
+    removeCurrentTime:function()
+    {
+      localStorage.setItem("currentTime","");
+    },
+    setLocArray:function(obj)
+    {
+      localStorage.setItem("locArray",JSON.stringify(obj));
+    },
+    getLocArray:function()
+    {
+      return JSON.parse(localStorage.getItem("locArray"));
     }
 };

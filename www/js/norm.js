@@ -317,6 +317,8 @@ define([
                 product.productName = productName;
                 product.nonExecution = isChecked;
                 product.qrCode = qrCode;
+				product.imgCaptureTime1=(image.replace(/^.*[\\\/]/, '').split('.')[0])||"";
+				product.imgCaptureTime2=(optImage.replace(/^.*[\\\/]/, '').split('.')[0])||"";
 
                 var callback = function(){
 

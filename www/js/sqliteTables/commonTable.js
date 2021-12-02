@@ -189,6 +189,14 @@ function removeAuditEntries(db, auditId, storeId, success, error) {
     db.transaction(function(tx){
         tx.executeSql('DELETE FROM mxpg_comp_products WHERE store_id=? AND audit_id=?;', [storeId, auditId]);
     });
+   
+    db.transaction(function(tx){
+        tx.executeSql('DELETE FROM mxpg_audits_preview WHERE store_id=? AND audit_id=?;', [storeId, auditId]);
+    });
+    db.transaction(function(tx){
+        tx.executeSql('DELETE FROM mxpg_audits_locaudit WHERE store_id=? AND audit_id=?;', [storeId, auditId]);
+    });
+
 }
 
 function removeAuditHistories(db, auditId, storeId, success, error){
