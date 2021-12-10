@@ -14,7 +14,7 @@ function createAllStoreTable(tx, success, error) {
  */
 
  function deleteAllStoreTable(db, success, error) {
-    var deleteStatement = "DELETE TABLE mxpg_store";
+    var deleteStatement = "DELETE FROM mxpg_store";
     db.transaction(function(tx){
     tx.executeSql(deleteStatement, success, error);
     });

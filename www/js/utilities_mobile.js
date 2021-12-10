@@ -1,7 +1,7 @@
 //var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
 //var PROJECTID = "97677c1832bc11e5a9bb0050569ccb08"; //demo
-var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
-//var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
+//var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
+var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
 var inswit = {
 
 	URI: "https://www.appiyo.com/",
@@ -19,7 +19,7 @@ var inswit = {
 		password: "",
 	},
 	
-	VERSION : "2.8",
+	VERSION : "2.9",
 
 	ISSELLERAUDIT: true,
 
@@ -181,6 +181,18 @@ var inswit = {
 	END_AUDIT_TIME:"",
 
 	provider_type:"gps",
+//watch Position Params
+	maximumAge: 3000,
+			timeout: 5000,
+			enableHighAccuracy: true,
+			priority: 100,
+			interval: 2000,
+			fastInterval: 1000,
+			////
+
+	watchPositionMethod:false,
+
+	removedStoreMessage : "This Store was already removed from the user",
 
 	alertMessages : {
 		"logOut" : "Are you sure you want to logout?",
@@ -189,7 +201,9 @@ var inswit = {
 
 		"no_execution" : "You have chosen NonExecution. Are you sure you want to continue?",
 
-		"gpsRetry" : "Your Location along with our Limit. Are you sure you want to continue?"
+		"gpsRetry" : "Your Location along with our Limit. Are you sure you want to continue?",
+
+		"removedStoreMessage" : this.removedStoreMessage
 	},
 
 	ErrorMessages: {
@@ -702,6 +716,17 @@ var inswit = {
 
 	});
 },
+
+isGPSInfo:function(callback)
+{
+	cordova.plugins.diagnostic.isGpsLocationAvailable(function(enable){
+		callback(enable);
+		return;
+	},
+	function(error){
+		console.error("The following error occurred: "+error);
+	});
+},
 	/**
 	 * Get Latitude and longitude using Location services plugin
 	 * Recursively it may try twice with 30 seconds timeout(totally 1 minute)
@@ -1016,21 +1041,50 @@ toRadians:function(val){
 	watchPosition:function(){
 		var that=this;
 		var watchID = cordova.plugins.locationServices.geolocation.watchPosition(inswit.onSuccess,inswit.onError, {
-			timeout: 30000,
-			priority: 1000
+			maximumAge: this.maximumAge||3000,
+			timeout: this.timeout||5000,
+			enableHighAccuracy: this.enableHighAccuracy||true,
+			priority:this.priority|| 100,
+			interval:this.interval|| 2000,
+			fastInterval: this.fastInterval||1000
 		  });
-		  inswit.watchId=watchID;
+		  	inswit.watchId=watchID;
 	},
 	onSuccess:function(position) {
-		console.log(position)
+		console.log(position);
+		var infoObject={"Device Model":device.model,
+								"Device platform":device.platform,
+								"Device Manufacturer":device.manufacturer,
+								"Device Android Version":device.version,
+								"NetworkInfo":navigator.network.connection.type,
+								"isOnline":navigator.onLine
+								//"LocationInfo":that.isNetInfo(callback)
+								}
+				
+				var pos = {
+					lat: position.coords.latitude || "",
+					lng: position.coords.longitude || "",
+					accuracy: position.coords.accuracy || "",
+					timeStamp:position.timestamp,
+					fetchedLat:position.coords.latitude||"",
+					fetchedLng:position.coords.longitude||"",
+					auditInfo:infoObject,
+					isOverwrite:false,
+				};
+		 LocalStorage.setLocalPosition(JSON.stringify(pos));
+
+
 	 },
 	  onError:function(error) {
-		console.log(error)
+		console.log(error);
+		//inswit.alert(error.message)
+		LocalStorage.setLocalPosition(JSON.stringify(error));
 	},
 
 	clearWatch:function()
 	{
 		cordova.plugins.locationServices.geolocation.clearWatch(inswit.watchId);
+		LocalStorage.removeLocalPosition();
 	},
 
 

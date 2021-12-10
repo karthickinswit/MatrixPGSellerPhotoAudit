@@ -156,7 +156,7 @@ define([
 			else{
 	
 			
-
+				//LocalStorage.removeLocalPosition();
                 var mId = $(event.currentTarget).attr("href");
                 var id = mId.split("-");
                 var auditId = id[0];

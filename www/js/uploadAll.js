@@ -876,6 +876,44 @@ define([
 								success: function(response){
 									if(response.Error == "0"){
 
+
+										if(response.ProcessVariables.isRemovedStore)
+										{
+											inswit.confirm(response.ProcessVariables.removedStoreMessage, function onConfirm(buttonIndex) {
+												if(buttonIndex == 1) {
+													inswit.clearPhoto(imageList);
+
+										// var template = "<div class='success_container'>\
+										// 		<img src='images/matrix_icons/success_48.png' align='middle'>\
+										// 		<p class='alert_msg'>Store details for <br/><b>{{name}}</b><br/>has been updated successfully</p>\
+										// 		<a class='go_audit_list btn btn-success' href='#audits'>Go to Store List</button>\
+										// 	</div>";
+
+										// var html = Mustache.to_html(template, {"name":that.storeName});
+										// inswit.hideLoaderEl();
+										// that.$el.empty().append(html);
+
+										var auditDetails = {
+											"auditId": that.auditId,
+											"storeId": that.storeId,
+											"date": new Date(),
+										}
+										readyToUpload[currentAuditIndex].isUploaded = true;
+
+										populateAuditHistoryTable(db, auditDetails);
+
+										removeAuditEntries(db, that.auditId, that.storeId);
+
+										that.upload(
+											readyToUpload, 
+											currentAuditIndex+1,
+											auditLength-1
+										);
+												}
+											}, "confirm", ["OK"]);
+										}
+										else{
+
 									//inswit.errorLog({"Info": "Audit Upload completed"});
 										// if(response.ProcessVariables.status == "10"){
 										// 	// inswit.alert(response.ProcessVariables.message);
@@ -922,6 +960,7 @@ define([
 											currentAuditIndex+1,
 											auditLength-1
 										);
+									}
 
 									}else{
 							

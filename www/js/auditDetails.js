@@ -61,7 +61,7 @@ define([
 							that.$el.empty().append(html);
 
 							if(!window.reload){
-								window.url = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly&channel=2";
+								window.url = "async!http://maps.google.com/maps/api/js?sensor=false";//"https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly&channel=2";
 							}
 							
 						var callback=function(pos,retry){	
@@ -250,18 +250,129 @@ define([
 			var channelId = id[2];
 
 			$(".android").mask("Capturing Geolocation... Please wait...", 100);
-			setTimeout(function(){
+			
+			
 				var providerType="network";//inswit.provider_type;
 				
-					that.advLatLng(storeId,auditId);
+					//that.advLatLng(storeId,auditId);
+
+					if(inswit.watchPositionMethod)
+					{
+						var callback = function(GPSInfo){
+							if(GPSInfo){
+						var pos=JSON.parse(LocalStorage.getLocalPosition());
+				//var	pos=j.length==0?"":j;
+					if(pos.hasOwnProperty('lat'))
+					{
+						var storeLoc={}; 
+					
+						findStoreLatLng(db, auditId, storeId,function(result){
+							storeLoc["lat"]=result.lat;
+							storeLoc["lng"]=result.lng;
+						var dis=storeLoc['lat']?(inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos.lat,pos.lng)):"No Master Data";
+						var watchPositionParams=JSON.stringify(
+							{				
+								maximumAge: inswit.maximumAge,
+								timeout: inswit.timeout,
+								enableHighAccuracy: inswit.enableHighAccuracy,
+								priority: inswit.priority,
+								interval: inswit.interval,
+								fastInterval: inswit.fastInterval
+							}
+						)
+						var errInfo={"Location-Captured by Watch Position": storeId+' '+auditId+' '+JSON.stringify(pos)+" Distance : "+dis+" WatchPositionParams : "+watchPositionParams};
+						inswit.logGPSError(auditId, storeId, errInfo);
+						inswit.errorLog(errInfo);
+						
+						if(storeLoc&&storeLoc.lat!="")
+						{
+							var distance1=inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos.lat,pos.lng);
+							console.log(distance1);
+							if(distance1>inswit.DISTANCE_LOWER_LIMIT&&distance1<inswit.DISTANCE_HIGHER_LIMIT)
+							{
+
+								pos.lat=inswit.replaceLatLng(storeLoc.lat);
+								pos.lng=inswit.replaceLatLng(storeLoc.lng);
+								pos.isOverwrite=true;
+
+							}
+
+						$(".android").unmask();
+						var route = "#audits/" + mId + "/continue/" + 
+						JSON.stringify(pos);
+						$(".android").unmask();
+						LocalStorage.removeLocalPosition();
+						router.navigate(route, {
+							trigger: true
+							});
+						}
+						else 
+						{
+							$(".android").unmask();
+						var route = "#audits/" + mId + "/continue/" + 
+						JSON.stringify(pos);
+						$(".android").unmask();
+						LocalStorage.removeLocalPosition();
+						router.navigate(route, {
+							trigger: true
+							});
+
+						}
+
+						
+
+						});
+
+						
+				
+					}else 
+					{
+						$(".android").unmask();
+					console.log("GPS error"+ pos);
+					//populateErrorLogTable(db, auditId, storeId, JSON.stringify(pos));
+					inswit.alert(""+pos.message);
+					inswit.clearWatch();
+					inswit.watchPosition();
+					//Log GPS error in appiyo
+					inswit.logGPSError(auditId, storeId, pos);
+					
+					$(".android").unmask();
+
+					}
+
+				}
+				else 
+				{
+					$(".android").unmask();
+					inswit.alert("GPS is Disabled On this Device");
+					inswit.clearWatch();
+					inswit.watchPosition();
+					$(".android").unmask();
+				}
+				};
+				inswit.isGPSInfo(callback);
+				}
+				else {
+					setTimeout(function(){
+					inswit.clearWatch();
 				that.setGeoLocation(auditId, storeId, function(pos1){   //LOCATION FIRST ATTEMPT
 					var storeLoc={}; 
 					
 					findStoreLatLng(db, auditId, storeId,function(result){
 						storeLoc["lat"]=result.lat;
 						storeLoc["lng"]=result.lng;
+						
 						var dis=storeLoc['lat']?(inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos1.lat,pos1.lng)):"No Master Data";
-						var errInfo={"Location-Captured First Attempt": storeId+' '+auditId+' '+JSON.stringify(pos1)+" Distance : "+dis};
+						var getPositionParams=JSON.stringify(
+							{				
+								maximumAge:inswit.MAXIMUM_AGE_FIRST,
+								timeout:inswit.TIMEOUT_FIRST,
+								enableHighAccuracy:inswit.IS_HIGH_ACCURACY_FIRST,
+								priority: inswit.PRIORITY.PRIORITY_HIGH_ACCURACY,
+								fastInterval: 1000
+							}
+						)
+						var errInfo={"Location-Captured First Attempt": storeId+' '+auditId+' '+JSON.stringify(pos1)+" Distance : "+dis+" Params : "+getPositionParams};
 					//populateErrorLogTable(db, auditId, storeId, JSON.stringify(errInfo));
 						inswit.logGPSError(auditId, storeId, errInfo);
 						inswit.errorLog(errInfo);
@@ -291,8 +402,16 @@ define([
 										
 										if(pos.lat){
 											var dis1=(inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos1.lat,pos1.lng));
-											
-											var errInfo={"Location-Captured Second Attempt": storeId+' '+auditId+' '+JSON.stringify(pos)+" Distance : "+dis1};
+											var getPositionParams=JSON.stringify(
+												{				
+													maximumAge:inswit.MAXIMUM_AGE_SECOND,
+													timeout:inswit.TIMEOUT_SECOND,
+													enableHighAccuracy:inswit.IS_HIGH_ACCURACY_SECOND,
+													priority: inswit.PRIORITY.PRIORITY_HIGH_ACCURACY,
+													fastInterval: 1000
+												}
+											)
+											var errInfo={"Location-Captured Second Attempt": storeId+' '+auditId+' '+JSON.stringify(pos)+" Distance : "+dis1+" Params : "+getPositionParams};
 											inswit.logGPSError(auditId, storeId, errInfo);
 											inswit.errorLog(errInfo);
 											var distance2=inswit.calculateDistance(storeLoc.lat,storeLoc.lng,pos.lat,pos.lng);
@@ -372,9 +491,14 @@ define([
 					});
 					
 				});
+			},0);
+			}
+			
 			
 				
-			}, 0);
+			
+		
+		
 
 		},
 

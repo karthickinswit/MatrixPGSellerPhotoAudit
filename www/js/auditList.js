@@ -70,7 +70,7 @@ define([
 			}
 			inswit.watchPosition();
 			setTimeout(function(){
-				inswit.clearWatch();
+				//inswit.clearWatch();
 			},4000)
 			// var callback=function(pos){};
 			// inswit.clearLoc(callback);
@@ -165,9 +165,20 @@ define([
 					inswit.provider_type=response.ProcessVariables.providerType||"network";
 			    	//inswit.TIMEOUT = parseInt(gpsTimer / 5); // Browser & GPS timeout configuration.
 					inswit.TIMEOUT = gpsTimer;
+					inswit.watchPositionMethod=response.ProcessVariables.watchPositionMethod||true;
 					inswit.TIMEOUT_FIRST=response.ProcessVariables.gpsCutOffTimeFirst||60000;
 					inswit.TIMEOUT_SECOND=response.ProcessVariables.gpsCutOffTimeSecond||30000;
 					inswit.LatLngTimeOut=response.ProcessVariables.latlongValid||30;
+					//---------------------------watch Positon Params-------------------------------//
+					inswit.maximumAge=response.ProcessVariables.maximumAge||3000;
+					inswit.timeout=response.ProcessVariables.timeout|| 5000;
+					inswit.enableHighAccuracy=response.ProcessVariables.watchenableHighAccuracy|| true;
+					inswit.priority=response.ProcessVariables.priority||100;
+					inswit.interval=response.ProcessVariables.interval||2000;
+					inswit.fastInterval=response.ProcessVariables.fastInterval|| 1000;
+					//-----------------------------------------------------------------------------//
+
+
 					LocalStorage.setGpsTimeOut(inswit.TIMEOUT);
 			    	LocalStorage.setNetworkGpsTimeout(inswit.TIMEOUT); // Mobile Network Timeout configuration.
 

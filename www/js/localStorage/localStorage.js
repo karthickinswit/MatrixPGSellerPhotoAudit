@@ -145,5 +145,20 @@ var LocalStorage = {
     getLocArray:function()
     {
       return JSON.parse(localStorage.getItem("locArray"));
+    },
+    setLocalPosition:function(pos)
+    {
+      localStorage.setItem("position",pos);
+    },
+    getLocalPosition:function()
+    {
+      // localStorage.setItem("position",pos);
+      return localStorage.getItem("position");
+    },
+    removeLocalPosition:function()
+    {
+      localStorage.setItem("position","");
     }
+
+
 };
