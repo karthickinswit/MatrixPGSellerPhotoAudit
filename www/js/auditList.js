@@ -147,6 +147,7 @@ define([
 			    	if(!response.ProcessVariables.status){
 			    		inswit.hideLoaderEl();
 			    		if(response.ProcessVariables.isOlder){
+							inswit.alert(response.ProcessVariables.response);
 			    			inswit.sessionOut();
 			    		}
 			    	}
