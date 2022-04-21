@@ -477,7 +477,7 @@ define([
 										}
 										populateAuditHistoryTable(db, auditDetails);
 
-										removeAuditEntries(db, that.auditId, that.storeId);
+										removeAuditEntries(db, that.auditId, that.storeId,[]);
 
 									}else{
 										

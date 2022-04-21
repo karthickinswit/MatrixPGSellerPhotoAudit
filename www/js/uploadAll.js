@@ -141,7 +141,7 @@ define([
             });*/
 		},
 
-		upload: function(readyToUpload, currentAuditIndex, auditLength){
+		upload: function(readyToUpload, currentAuditIndex, auditLength,temp){
 			var that = this;
 			var errorCaused;
 			var auditFailId = []
@@ -191,7 +191,9 @@ define([
                     }
 
 					if(that.retryCount < inswit.uploadRetryLimit) {
+
 					    that.retryCount = that.retryCount + 1;
+						if(temp){that.retryCount=5;errorCaused="Images are not properly Uploaded"}
 					    if(that.retryCount == 5) {
 					        that.checkError = true;
 					    }
@@ -730,6 +732,8 @@ define([
 			auditLength) {
 
 			var that = this;
+			var isAllProductImagesCompleted=false;
+			var isStoreImageCompleted=false;
 
 			var success = checkConnection();
 		   	if(!success) {
@@ -749,6 +753,7 @@ define([
 				
 				for(var j = 0; j < length; j++){
 					var product  = products[j];
+					
 					var productId = product.product_id;
 					var priority = product.priority;
 					var executionStatus = (product.non_execution == "true") ? true:false;
@@ -763,10 +768,24 @@ define([
 							optPhotoId = inswit.URI + "d/drive/docs/" + product.opt_image_id;
 						}
 					}
+					if(priority == 10&&optPhotoId==""&&executionStatus==false){
+						isAllProductImagesCompleted=true;
+					}
 
 					var photoId = "";
 					if(product.image_id){
 						photoId = inswit.URI + "d/drive/docs/" + product.image_id;
+					}
+					if(photoId==""&&executionStatus==false){
+						isAllProductImagesCompleted=true;
+					}
+					if(product.image_uri!="")
+					{
+						if(photoId=="")continue;
+					}
+					else if(product.opt_image_uri!="")
+					{
+						if(optPhotoId=="")continue;
 					}
 					
 					var detail = {
@@ -786,6 +805,9 @@ define([
 				if(imageList[0] && imageList[0].image){
 					storeImage = inswit.URI + "d/drive/docs/" + imageList[0].image;
 				}
+				if(storeImage==""){
+					isStoreImageCompleted=true;
+				}
 				
 				findStore(db, that.auditId, that.storeId, function(result){
 
@@ -804,335 +826,344 @@ define([
 						if(audit.length > 0){
 							
 							
-								var previewImage="";
-								if(audit.item(0).loc_preview_image_id){
-									previewImage = inswit.URI + "d/drive/docs/" + audit.item(0).loc_preview_image_id;
-								}
+							var previewImage="";
+							if(audit.item(0).loc_preview_image_id){
+								previewImage = inswit.URI + "d/drive/docs/" + audit.item(0).loc_preview_image_id;
+							}
 
-							var auditStatus = audit.item(0).option_id;		
-							var id = audit.item(0).id;
-							var latitude = audit.item(0).lat;
-							var longitude = audit.item(0).lng;
-							var accuracy = audit.item(0).accuracy;
-							var fetchedLatitude=audit.item(0).fetched_lat;
-							var fetchedLongitude=audit.item(0).fetched_lng;
-							var auditInfo=audit.item(0).audit_info;
-							var isOverwrite=audit.item(0).over_write;
-							var strImgCaptureTime=audit.item(0).img_capture_time||"";
-							var startAuditTime=audit.item(0).startTime||"";
-							var endAuditTime=audit.item(0).endTime||"";
-							var advancedLat=audit.item(0).advlat||"";
-							var advancedLng=audit.item(0).advlng||"";
-							var advancedTimeStamp=audit.item(0).advtimestamp||"";
-							var gpsTimeStamp=audit.item(0).timeStamp||"";
-							//advancedTimeStamp=new Date(advancedTimeStamp)?new Date(advancedTimeStamp).toLocaleString():"";
-							//gpsTimeStamp=new Date(gpsTimeStamp)?new Date(gpsTimeStamp).toLocaleString():"";
-							startAuditTime=new Date(startAuditTime).toLocaleString();
-							endAuditTime=new Date(endAuditTime).toLocaleString();
-
-
-
-							
-							
-
-							var processVariables = {
-								"projectId":inswit.UPLOAD_PROCESS.projectId,
-								"workflowId":inswit.UPLOAD_PROCESS.workflowId,
-								"processId":inswit.UPLOAD_PROCESS.processId,
-								"ProcessVariables":{
-									"isSellerAudit":inswit.ISSELLERAUDIT,
-									"photoAuditDetails":auditDetails,
-									"auditId":that.auditId,
-									"id":id,
-									"auditor":LocalStorage.getEmployeeId(),
-									"storeId":that.storeId,
-									"option": auditStatus,
-									"latitude": latitude,
-									"longitude": longitude,
-									"storeImage":storeImage,
-									"fetchedLatitude":fetchedLatitude,
-									"fetchedLongitude":fetchedLongitude,
-									"updateStorePosition": updateStorePosition,
-									"version":inswit.VERSION,
-									"accuracy": accuracy,
-									"previewImage":previewImage,
-									"auditInfo":auditInfo,
-									"isOverwrite:":isOverwrite,
-									"storeImageCaptureTime":strImgCaptureTime,
-									"startAuditTime":startAuditTime,
-									"endAuditTime":endAuditTime,
-									"advancedLat":(advancedLat=="undefined"||!advancedLat)?"":advancedLat,
-									"advancedLng":(advancedLng=="undefined"||!advancedLng)?"":advancedLng,
-									"advancedTimeStamp":(advancedTimeStamp=="undefined"||!advancedTimeStamp)?"":advancedTimeStamp,
-									"fetchedTimeStamp":(gpsTimeStamp=="undefined"||!gpsTimeStamp)?"":gpsTimeStamp,
-								}
-							};
-
-							//inswit.errorLog({"Info": "Audit Upload initiated"});
-							//inswit.errorLog({"processVariables": processVariables});
-
-							//Upload the Store details to the Appiyo server
-							inswit.executeProcess(processVariables, {
-								success: function(response){
-									if(response.Error == "0"){
+						var auditStatus = audit.item(0).option_id;		
+						var id = audit.item(0).id;
+						var latitude = audit.item(0).lat;
+						var longitude = audit.item(0).lng;
+						var accuracy = audit.item(0).accuracy;
+						var fetchedLatitude=audit.item(0).fetched_lat;
+						var fetchedLongitude=audit.item(0).fetched_lng;
+						var auditInfo=audit.item(0).audit_info;
+						var isOverwrite=audit.item(0).over_write;
+						var strImgCaptureTime=audit.item(0).img_capture_time||"";
+						var startAuditTime=audit.item(0).startTime||"";
+						var endAuditTime=audit.item(0).endTime||"";
+						var advancedLat=audit.item(0).advlat||"";
+						var advancedLng=audit.item(0).advlng||"";
+						var advancedTimeStamp=audit.item(0).advtimestamp||"";
+						var gpsTimeStamp=audit.item(0).timeStamp||"";
+						//advancedTimeStamp=new Date(advancedTimeStamp)?new Date(advancedTimeStamp).toLocaleString():"";
+						//gpsTimeStamp=new Date(gpsTimeStamp)?new Date(gpsTimeStamp).toLocaleString():"";
+						startAuditTime=new Date(startAuditTime).toLocaleString();
+						endAuditTime=new Date(endAuditTime).toLocaleString();
 
 
-										if(response.ProcessVariables.isRemovedStore)
-										{
-											inswit.confirm(response.ProcessVariables.removedStoreMessage, function onConfirm(buttonIndex) {
-												if(buttonIndex == 1) {
-													inswit.clearPhoto(imageList);
 
-										// var template = "<div class='success_container'>\
-										// 		<img src='images/matrix_icons/success_48.png' align='middle'>\
-										// 		<p class='alert_msg'>Store details for <br/><b>{{name}}</b><br/>has been updated successfully</p>\
-										// 		<a class='go_audit_list btn btn-success' href='#audits'>Go to Store List</button>\
-										// 	</div>";
-
-										// var html = Mustache.to_html(template, {"name":that.storeName});
-										// inswit.hideLoaderEl();
-										// that.$el.empty().append(html);
-
-										var auditDetails = {
-											"auditId": that.auditId,
-											"storeId": that.storeId,
-											"date": new Date(),
-										}
-										readyToUpload[currentAuditIndex].isUploaded = true;
-
-										populateAuditHistoryTable(db, auditDetails);
-
-										removeAuditEntries(db, that.auditId, that.storeId);
-
-										that.upload(
-											readyToUpload, 
-											currentAuditIndex+1,
-											auditLength-1
-										);
-												}
-											}, "confirm", ["OK"]);
-										}
-										else{
-
-									//inswit.errorLog({"Info": "Audit Upload completed"});
-										// if(response.ProcessVariables.status == "10"){
-										// 	// inswit.alert(response.ProcessVariables.message);
-										// 	readyToUpload[currentAuditIndex].message = response.ProcessVariables.message;
-										// 	// router.navigate("/audits", {
-						    //  //                    trigger: true
-						    //  //                });
-
-						    //                 that.upload(
-										// 		readyToUpload, 
-										// 		currentAuditIndex+1,
-										// 		auditLength-1
-										// 	);
-										// 	inswit.clearPhoto(imageList);
-
-										// 	return;
-										// }
-
-										inswit.clearPhoto(imageList);
-
-										// var template = "<div class='success_container'>\
-										// 		<img src='images/matrix_icons/success_48.png' align='middle'>\
-										// 		<p class='alert_msg'>Store details for <br/><b>{{name}}</b><br/>has been updated successfully</p>\
-										// 		<a class='go_audit_list btn btn-success' href='#audits'>Go to Store List</button>\
-										// 	</div>";
-
-										// var html = Mustache.to_html(template, {"name":that.storeName});
-										// inswit.hideLoaderEl();
-										// that.$el.empty().append(html);
-
-										var auditDetails = {
-											"auditId": that.auditId,
-											"storeId": that.storeId,
-											"date": new Date(),
-										}
-										readyToUpload[currentAuditIndex].isUploaded = true;
-
-										populateAuditHistoryTable(db, auditDetails);
-
-										removeAuditEntries(db, that.auditId, that.storeId);
-
-										that.upload(
-											readyToUpload, 
-											currentAuditIndex+1,
-											auditLength-1
-										);
-									}
-
-									}else{
-							
-										// if(response.ProcessVariables.status == "10"){
-
-										// 	that.upload(
-										// 		readyToUpload, 
-										// 		currentAuditIndex+1,
-										// 		auditLength-1
-										// 	);
-
-										// }else{
-											//inswit.alert("Server Error. Try Again Later!", "Error");
-											
-											
-										that.upload(
-											readyToUpload, 
-											currentAuditIndex+1,
-											auditLength-1
-										);
-										//}
-
-										//inswit.clearPhoto(imageList);
-
-										var pVariables = {
-										    "projectId":inswit.ERROR_LOG.projectId,
-										    "workflowId":inswit.ERROR_LOG.workflowId,
-										    "processId":inswit.ERROR_LOG.processId,
-										    "ProcessVariables":{
-										    	"errorType": inswit.ERROR_LOG_TYPES.UPLOAD_AUDIT,
-										    	"isSellerAudit": inswit.ISSELLERAUDIT,
-										    	"auditId": that.auditId, 
-										    	"storeId": that.storeId,
-										    	"empId":LocalStorage.getEmployeeId(),
-										    	"issueDate":new Date(),
-										    	"issueDescription": JSON.stringify(processVariables.ProcessVariables),
-										    	"version": inswit.VERSION
-										    }
-										};
 						
-										inswit.executeProcess(pVariables, {
-										    success: function(response){
-										    	//inswit.hideLoaderEl();
-										    	if(response.ProcessVariables){
-										    	
-										    	}
-							                }, failure: function(error, response){
-							                	//inswit.hideLoaderEl();
-							                	that.updateErrorFailureLog({"Audit upload failed": response});
-							                	switch(error){
-							                		case 0:{
-                                                        if(that.checkError) {
-                                                            that.errorStack.push(that.storeId +": No Internet Connection!")
-                                                        }
-                                                        //inswit.alert("No Internet Connection!");
-                                                        break;
-                                                    }
-                                                    case 1:{
-                                                         if(that.checkError) {
-                                                            that.errorStack.push(that.storeId +": Check your network settings!")
-                                                         }
-                                                         //inswit.alert("Check your network settings!");
-                                                        break;
-                                                    }
-                                                    case 2:{
-                                                        if(that.checkError) {
-                                                            that.errorStack.push(that.storeId +": Server Busy.Try Again!")
-                                                        }
-                                                        //inswit.alert("Server Busy.Try Again!");
-                                                        break;
-                                                    }
-							                	}
-							                }
-							            });
+						
+
+						var processVariables = {
+							"projectId":inswit.UPLOAD_PROCESS.projectId,
+							"workflowId":inswit.UPLOAD_PROCESS.workflowId,
+							"processId":inswit.UPLOAD_PROCESS.processId,
+							"ProcessVariables":{
+								"isSellerAudit":inswit.ISSELLERAUDIT,
+								"photoAuditDetails":auditDetails,
+								"auditId":that.auditId,
+								"id":id,
+								"auditor":LocalStorage.getEmployeeId(),
+								"storeId":that.storeId,
+								"option": auditStatus,
+								"latitude": latitude,
+								"longitude": longitude,
+								"storeImage":storeImage,
+								"fetchedLatitude":fetchedLatitude,
+								"fetchedLongitude":fetchedLongitude,
+								"updateStorePosition": updateStorePosition,
+								"version":inswit.VERSION,
+								"accuracy": accuracy,
+								"previewImage":previewImage,
+								"auditInfo":auditInfo,
+								"isOverwrite:":isOverwrite,
+								"storeImageCaptureTime":strImgCaptureTime,
+								"startAuditTime":startAuditTime,
+								"endAuditTime":endAuditTime,
+								"advancedLat":(advancedLat=="undefined"||!advancedLat)?"":advancedLat,
+								"advancedLng":(advancedLng=="undefined"||!advancedLng)?"":advancedLng,
+								"advancedTimeStamp":(advancedTimeStamp=="undefined"||!advancedTimeStamp)?"":advancedTimeStamp,
+								"fetchedTimeStamp":(gpsTimeStamp=="undefined"||!gpsTimeStamp)?"":gpsTimeStamp,
+							}
+						};
+
+						//inswit.errorLog({"Info": "Audit Upload initiated"});
+						//inswit.errorLog({"processVariables": processVariables});
+						if(isAllProductImagesCompleted||isStoreImageCompleted){
+							// that.retryCount=4;
+							that.upload(
+								readyToUpload, 
+								currentAuditIndex+1,
+								auditLength-1,
+								5
+							);
+							return;
+						}
+						//Upload the Store details to the Appiyo server
+						inswit.executeProcess(processVariables, {
+							success: function(response){
+								if(response.Error == "0"){
+
+
+									if(response.ProcessVariables.isRemovedStore)
+									{
+										inswit.confirm(response.ProcessVariables.removedStoreMessage, function onConfirm(buttonIndex) {
+											if(buttonIndex == 1) {
+												inswit.clearPhoto(imageList);
+
+									// var template = "<div class='success_container'>\
+									// 		<img src='images/matrix_icons/success_48.png' align='middle'>\
+									// 		<p class='alert_msg'>Store details for <br/><b>{{name}}</b><br/>has been updated successfully</p>\
+									// 		<a class='go_audit_list btn btn-success' href='#audits'>Go to Store List</button>\
+									// 	</div>";
+
+									// var html = Mustache.to_html(template, {"name":that.storeName});
+									// inswit.hideLoaderEl();
+									// that.$el.empty().append(html);
+
+									var auditDetails = {
+										"auditId": that.auditId,
+										"storeId": that.storeId,
+										"date": new Date(),
 									}
-								}, failure: function(error, response){
-									//inswit.hideLoaderEl();
+									readyToUpload[currentAuditIndex].isUploaded = true;
+
+									populateAuditHistoryTable(db, auditDetails);
+
+									removeAuditEntries(db, that.auditId, that.storeId);
+
 									that.upload(
 										readyToUpload, 
 										currentAuditIndex+1,
 										auditLength-1
 									);
-					                that.updateErrorFailureLog({"Audit upload failed": response});
-									switch(error){
-                                        case 0:{
-                                            if(that.checkError) {
-                                                that.errorStack.push(that.storeId +": No Internet Connection!")
-                                            }
-                                            //inswit.alert("No Internet Connection!");
-                                            break;
-                                        }
-                                        case 1:{
-                                             if(that.checkError) {
-                                                that.errorStack.push(that.storeId +": Check your network settings!")
-                                             }
-                                             //inswit.alert("Check your network settings!");
-                                            break;
-                                        }
-                                        case 2:{
-                                            if(that.checkError) {
-                                                that.errorStack.push(that.storeId +": Server Busy.Try Again!")
-                                            }
-                                            //inswit.alert("Server Busy.Try Again!");
-                                            break;
-                                        }
-                                    }
-								}
-							});
-						
-						}
-					});
-			   	});
-		   	});
-		},
+											}
+										}, "confirm", ["OK"]);
+									}
+									else{
 
-		updateErrorFailureLog: function(error) {
-            var that = this;
-		    var pVariables = {
-                "projectId":inswit.ERROR_LOG.projectId,
-                "workflowId":inswit.ERROR_LOG.workflowId,
-                "processId":inswit.ERROR_LOG.processId,
-                "ProcessVariables":{
-                    "errorType": inswit.ERROR_LOG_TYPES.BULK_UPLOAD_FAIL,
-                    "isSellerAudit": inswit.ISSELLERAUDIT,
+								//inswit.errorLog({"Info": "Audit Upload completed"});
+									// if(response.ProcessVariables.status == "10"){
+									// 	// inswit.alert(response.ProcessVariables.message);
+									// 	readyToUpload[currentAuditIndex].message = response.ProcessVariables.message;
+									// 	// router.navigate("/audits", {
+						//  //                    trigger: true
+						//  //                });
+
+						//                 that.upload(
+									// 		readyToUpload, 
+									// 		currentAuditIndex+1,
+									// 		auditLength-1
+									// 	);
+									// 	inswit.clearPhoto(imageList);
+
+									// 	return;
+									// }
+
+									inswit.clearPhoto(imageList);
+
+									// var template = "<div class='success_container'>\
+									// 		<img src='images/matrix_icons/success_48.png' align='middle'>\
+									// 		<p class='alert_msg'>Store details for <br/><b>{{name}}</b><br/>has been updated successfully</p>\
+									// 		<a class='go_audit_list btn btn-success' href='#audits'>Go to Store List</button>\
+									// 	</div>";
+
+									// var html = Mustache.to_html(template, {"name":that.storeName});
+									// inswit.hideLoaderEl();
+									// that.$el.empty().append(html);
+
+									var auditDetails = {
+										"auditId": that.auditId,
+										"storeId": that.storeId,
+										"date": new Date(),
+									}
+									readyToUpload[currentAuditIndex].isUploaded = true;
+
+									populateAuditHistoryTable(db, auditDetails);
+
+									removeAuditEntries(db, that.auditId, that.storeId);
+
+									that.upload(
+										readyToUpload, 
+										currentAuditIndex+1,
+										auditLength-1
+									);
+								}
+
+								}else{
+						
+									// if(response.ProcessVariables.status == "10"){
+
+									// 	that.upload(
+									// 		readyToUpload, 
+									// 		currentAuditIndex+1,
+									// 		auditLength-1
+									// 	);
+
+									// }else{
+										//inswit.alert("Server Error. Try Again Later!", "Error");
+										
+										
+									that.upload(
+										readyToUpload, 
+										currentAuditIndex+1,
+										auditLength-1
+									);
+									//}
+
+									//inswit.clearPhoto(imageList);
+
+									var pVariables = {
+										"projectId":inswit.ERROR_LOG.projectId,
+										"workflowId":inswit.ERROR_LOG.workflowId,
+										"processId":inswit.ERROR_LOG.processId,
+										"ProcessVariables":{
+											"errorType": inswit.ERROR_LOG_TYPES.UPLOAD_AUDIT,
+											"isSellerAudit": inswit.ISSELLERAUDIT,
+											"auditId": that.auditId, 
+											"storeId": that.storeId,
+											"empId":LocalStorage.getEmployeeId(),
+											"issueDate":new Date(),
+											"issueDescription": JSON.stringify(processVariables.ProcessVariables),
+											"version": inswit.VERSION
+										}
+									};
+					
+									inswit.executeProcess(pVariables, {
+										success: function(response){
+											//inswit.hideLoaderEl();
+											if(response.ProcessVariables){
+											
+											}
+										}, failure: function(error, response){
+											//inswit.hideLoaderEl();
+											that.updateErrorFailureLog({"Audit upload failed": response});
+											switch(error){
+												case 0:{
+													if(that.checkError) {
+														that.errorStack.push(that.storeId +": No Internet Connection!")
+													}
+													//inswit.alert("No Internet Connection!");
+													break;
+												}
+												case 1:{
+													 if(that.checkError) {
+														that.errorStack.push(that.storeId +": Check your network settings!")
+													 }
+													 //inswit.alert("Check your network settings!");
+													break;
+												}
+												case 2:{
+													if(that.checkError) {
+														that.errorStack.push(that.storeId +": Server Busy.Try Again!")
+													}
+													//inswit.alert("Server Busy.Try Again!");
+													break;
+												}
+											}
+										}
+									});
+								}
+							}, failure: function(error, response){
+								//inswit.hideLoaderEl();
+								that.upload(
+									readyToUpload, 
+									currentAuditIndex+1,
+									auditLength-1
+								);
+								that.updateErrorFailureLog({"Audit upload failed": response});
+								switch(error){
+									case 0:{
+										if(that.checkError) {
+											that.errorStack.push(that.storeId +": No Internet Connection!")
+										}
+										//inswit.alert("No Internet Connection!");
+										break;
+									}
+									case 1:{
+										 if(that.checkError) {
+											that.errorStack.push(that.storeId +": Check your network settings!")
+										 }
+										 //inswit.alert("Check your network settings!");
+										break;
+									}
+									case 2:{
+										if(that.checkError) {
+											that.errorStack.push(that.storeId +": Server Busy.Try Again!")
+										}
+										//inswit.alert("Server Busy.Try Again!");
+										break;
+									}
+								}
+							}
+						});
+					
+					}
+				});
+			   });
+		   });
+	},
+
+	updateErrorFailureLog: function(error) {
+		var that = this;
+		var pVariables = {
+			"projectId":inswit.ERROR_LOG.projectId,
+			"workflowId":inswit.ERROR_LOG.workflowId,
+			"processId":inswit.ERROR_LOG.processId,
+			"ProcessVariables":{
+				"errorType": inswit.ERROR_LOG_TYPES.BULK_UPLOAD_FAIL,
+				"isSellerAudit": inswit.ISSELLERAUDIT,
 //                    "auditId": that.auditId,
 //                    "storeId": that.storeId,
-                    "empId":LocalStorage.getEmployeeId(),
-                    "issueDate":new Date(),
-                    "issueDescription": JSON.stringify(error),
-                    "version": inswit.VERSION
-                }
-            };
+				"empId":LocalStorage.getEmployeeId(),
+				"issueDate":new Date(),
+				"issueDescription": JSON.stringify(error),
+				"version": inswit.VERSION
+			}
+		};
 
-            inswit.executeProcess(pVariables, {
-                success: function(response){
-                   // inswit.hideLoaderEl();
-                    if(response.ProcessVariables){
+		inswit.executeProcess(pVariables, {
+			success: function(response){
+			   // inswit.hideLoaderEl();
+				if(response.ProcessVariables){
 
-                    }
-                }, failure: function(error){
-                    //inswit.hideLoaderEl();
-                    switch(error){
-                        case 0:{
-                            if(that.checkError) {
-                                that.errorStack.push(that.storeId +": No Internet Connection!")
-                            }
-                            //inswit.alert("No Internet Connection!");
-                            break;
-                        }
-                        case 1:{
-                             if(that.checkError) {
-                                that.errorStack.push(that.storeId +": Check your network settings!")
-                             }
-                             //inswit.alert("Check your network settings!");
-                            break;
-                        }
-                        case 2:{
-                            if(that.checkError) {
-                                that.errorStack.push(that.storeId +": Server Busy.Try Again!")
-                            }
-                            //inswit.alert("Server Busy.Try Again!");
-                            break;
-                        }
-                    }
-                }
-            })
-             ;
-		}
+				}
+			}, failure: function(error){
+				//inswit.hideLoaderEl();
+				switch(error){
+					case 0:{
+						if(that.checkError) {
+							that.errorStack.push(that.storeId +": No Internet Connection!")
+						}
+						//inswit.alert("No Internet Connection!");
+						break;
+					}
+					case 1:{
+						 if(that.checkError) {
+							that.errorStack.push(that.storeId +": Check your network settings!")
+						 }
+						 //inswit.alert("Check your network settings!");
+						break;
+					}
+					case 2:{
+						if(that.checkError) {
+							that.errorStack.push(that.storeId +": Server Busy.Try Again!")
+						}
+						//inswit.alert("Server Busy.Try Again!");
+						break;
+					}
+				}
+			}
+		})
+		 ;
+	}
 
 
 
-	});
+});
 
-	return UploadAll;
+return UploadAll;
 });

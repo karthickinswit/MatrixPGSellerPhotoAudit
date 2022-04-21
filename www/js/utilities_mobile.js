@@ -1,7 +1,7 @@
-//var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
+// var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
 //var PROJECTID = "97677c1832bc11e5a9bb0050569ccb08"; //demo
-//var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
-var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
+var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
+// var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
 var inswit = {
 
 	URI: "https://www.appiyo.com/",

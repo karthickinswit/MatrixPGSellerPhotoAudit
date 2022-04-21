@@ -276,54 +276,6 @@ define([
 										            });
 					                        	}
 					                        );
-											createLocAuditTable(
-					                        	tx, 
-					                        	function(){}, 
-					                        	function(error, info){
-
-					                        		var desc = {
-					                        			value: info.message,
-					                        			table: "mxpg_audits_locaudit"
-					                        		};
-
-					                        		var pVariables = {
-													    "projectId":inswit.ERROR_LOG.projectId,
-													    "workflowId":inswit.ERROR_LOG.workflowId,
-													    "processId":inswit.ERROR_LOG.processId,
-													    "ProcessVariables":{
-													    	"errorType": inswit.ERROR_LOG_TYPES.DB_CREATION,
-													    	"empId":empId,
-													    	"issueDate":new Date(),
-													    	"issueDescription": JSON.stringify(desc),
-													    	"version": inswit.VERSION
-													    }
-													};
-									
-													inswit.executeProcess(pVariables, {
-													    success: function(response){
-													    	if(response.ProcessVariables){
-													    		
-													    	}
-										                }, failure: function(error){
-										                	inswit.hideLoaderEl();
-										                	switch(error){
-										                		case 0:{
-										                			inswit.alert("No Internet Connection!");
-										                			break;
-										                		}
-										                		case 1:{
-										                			inswit.alert("Check your network settings!");
-										                			break;
-										                		}
-										                		case 2:{
-										                			inswit.alert("Server Busy.Try Again!");
-										                			break;
-										                		}
-										                	}
-										                }
-										            });
-					                        	}
-					                        );
 											createAuditPreviewTable(
 					                        	tx, 
 					                        	function(){}, 

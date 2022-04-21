@@ -1128,17 +1128,26 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
 
                     Canvas cs = new Canvas(scaledBitmap);
                     Paint tPaint = new Paint();
-                    tPaint.setTextSize(40);
+                    tPaint.setTextSize(30);
                     tPaint.setColor(Color.WHITE);
                     tPaint.setStyle(Paint.Style.FILL);
+                    float height = tPaint.measureText("yY");
+                    float width=tPaint.measureText("xX");
+                    int mat = Math.min(scaledHeight,scaledWidth/2);
+                    int ttwidth=determineMaxTextSize(text, mat);
+                    tPaint.setTextSize(ttwidth);
  		    
                     drawCenter(cs, tPaint, text);
+                    
+                    
+                    // cs.drawText(text, scaledBitmap.getWidth()/2, scaledBitmap.getHeight()/2 , tPaint);
+                    //cs.drawCenter();
                     
                     tPaint.setTextSize(30);
                     tPaint.setColor(Color.WHITE);
                     tPaint.setStyle(Paint.Style.FILL);
 
-                    float height = tPaint.measureText("yY");
+                    
                     cs.drawText(lat, 20f, scaledBitmap.getHeight() - (height+50f), tPaint);
 
                     cs.drawText(lng, 20f, scaledBitmap.getHeight() - (height+5f), tPaint);
@@ -1151,6 +1160,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 }
     
             }catch (Exception e) {
+                // throw("Unable to Write text to an Image");
             }
     
 
@@ -1166,6 +1176,17 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         }
 
     }
+    private int determineMaxTextSize(String str, float maxWidth)
+{
+    int size = 0;       
+    Paint paint = new Paint();
+
+    do {
+        paint.setTextSize(++ size);
+    } while(paint.measureText(str) < maxWidth);
+
+    return size;
+}
 
     private void setTextSizeForWidth(Paint paint, float desiredHeight,
                                         String text) {
