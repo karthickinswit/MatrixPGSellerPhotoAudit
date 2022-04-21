@@ -192,7 +192,7 @@ define([
                                 }
                             }
                         }
-						selectAdvLatlng(db, auditId, storeId, function(advPos){
+						
 						// var infoObject={"Device Model":device.model,
 						// 				"Device platform":device.platform,
 						// 				"Device Manufacturer":device.manufacturer,
@@ -225,9 +225,9 @@ define([
 						audit.timeStamp=((JSON.stringify(position.timeStamp)));//.includes("."))?((position.timeStamp).split('.')[0]):position.timeStamp;
                         audit.startTime=inswit.START_AUDIT_TIME;
 						//audit.advLatLng=(position.advLatLng=="undefined"||position.advLatLng==undefined)?"":JSON.stringify(position.advLatLng);
-						audit.advLat=advPos.length>0?advPos[0].lat:"";
-						audit.advLng=advPos.length>0?advPos[0].lng:"";
-						audit.advTimeStamp=advPos.length>0?advPos[0].timestamp:"";
+						// audit.advLat=advPos.length>0?advPos[0].lat:"";
+						// audit.advLng=advPos.length>0?advPos[0].lng:"";
+						// audit.advTimeStamp=advPos.length>0?advPos[0].timestamp:"";
 						/**
                          * Geolocation exists check done here because,
                          * There could be a possibility of multiple time revisit this page. So
@@ -268,7 +268,7 @@ define([
                         }, function(a, e){
                             //Error callback of selectCompletedAudit function.
                         });
-					});
+					
                     });
                 }, function(a, e){
                     console.log(e);

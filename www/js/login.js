@@ -227,6 +227,7 @@ define([
 										            });
 					                        	}
 					                        );
+											
 
 					                        createCompAuditTable(
 					                        	tx, 
