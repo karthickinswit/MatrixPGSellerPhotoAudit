@@ -158,7 +158,23 @@ var LocalStorage = {
     removeLocalPosition:function()
     {
       localStorage.setItem("position","");
-    }
+    },
 
+    setAuditReasons:function(auditreasons)
+    {
+      localStorage.setItem("auditReasons",JSON.stringify(auditreasons));
+    },
+    getAuditReasons:function()
+    {
+      return JSON.parse(localStorage.getItem("auditReasons"));
+    },
+    setDeviceTypes:function(deviceTypes)
+    {
+      localStorage.setItem("deviceTypes",JSON.stringify(deviceTypes));
+    },
+    getDeviceTypes:function()
+    {
+      return JSON.parse(localStorage.getItem("deviceTypes"));
+    }
 
 };

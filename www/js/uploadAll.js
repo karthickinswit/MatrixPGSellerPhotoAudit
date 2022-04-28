@@ -300,15 +300,30 @@ define([
 									 * Hotspot brands should not have images thats why i restricted based on priority
 									 * Sometimes hotspot and Frontage brand also doesn't had image, thats why i am checking image_uri
 									 */
-									if(p.priority != 8 && p.image_uri){
+									if(p.priority != 8 && (p.image_uri||p.space_photo_uri)){
+
+										if(p.product_id=="61" && p.space_photo_uri){
+											imageList.push({
+												"auditId":that.auditId,
+												"storeId":that.storeId,
+												"productId":p.product_id,
+												"productName":p.product_name,
+												"imageURI":p.space_photo_uri,
+												"image":p.space_photo_id,
+												"isSpaceImage":true
+											});
+										}
+										else {
 										imageList.push({
 											"auditId":that.auditId,
 											"storeId":that.storeId,
 											"productId":p.product_id,
 											"productName":p.product_name,
 											"imageURI":p.image_uri,
-											"image":p.image_id
+											"image":p.image_id,
+											"isSpaceImage":false
 										});
+									}
 
 										if(p.priority == 10 && p.opt_image_uri){
 											
@@ -565,6 +580,33 @@ define([
 								return;
 							});
 						}else{
+
+							if(productId=="61"&&imageList[index].isSpaceImage){
+								updateGilleteProductImageId(db, auditId, storeId, productId, image, function(){
+
+									that.uploadPhoto(
+										imageList, 
+										index+1, 
+										length-1, 
+										false,
+										readyToUpload, 
+										currentAuditIndex,
+										auditLength);
+									return;
+	
+								}, function(a, e){
+									that.uploadPhoto(
+										imageList, 
+										index, 
+										length,
+										false,
+										readyToUpload, 
+										currentAuditIndex,
+										auditLength);
+									return;
+								});
+							}
+							else{
 							updateProductImageId(db, auditId, storeId, productId, image, function(){
 
 								that.uploadPhoto(
@@ -588,6 +630,7 @@ define([
 									auditLength);
 								return;
 							});
+						}
 						}
 					}
 		    	}else{
@@ -760,6 +803,10 @@ define([
 					var qrCode = product.qr_code || "";
 					var imgCaptureTime=product.image_capture_time;
 					var imgCaptureTime2=product.image_capture_time2;
+					var reason = product.reason||"";
+    				var installDevice = product.inst_device||"";
+    				// var spacePhoto = product.space_photo_id||"";
+    				var deviceType = product.dev_type||"";
 					
 
 					var optPhotoId = "";
@@ -776,7 +823,14 @@ define([
 					if(product.image_id){
 						photoId = inswit.URI + "d/drive/docs/" + product.image_id;
 					}
-					if(photoId==""&&executionStatus==false){
+
+					var spacePhotoId = "";
+					if(product.space_photo_id)
+					{
+						spacePhotoId = inswit.URI + "d/drive/docs/" + product.space_photo_id;	
+					}
+
+					if(photoId==""&&spacePhotoId==""&&executionStatus==false){
 						isAllProductImagesCompleted=true;
 					}
 					if(product.image_uri!="")
@@ -787,7 +841,14 @@ define([
 					{
 						if(optPhotoId=="")continue;
 					}
+
+					if(installDevice!="")
+					{
+						installDevice=(installDevice=="Yes")?"6":"7";
+					}
 					
+					
+
 					var detail = {
 						brandId:productId,
 						photoId:photoId,
@@ -795,7 +856,12 @@ define([
 						nonExecution: executionStatus,
 						qrCode: qrCode,
 						photoCaptureTime:imgCaptureTime,
-						optionalPhotoCaptureTime:imgCaptureTime2
+						optionalPhotoCaptureTime:imgCaptureTime2,
+						reason:reason,
+						installDevice:installDevice,
+						spacePhoto:spacePhotoId,
+						deviceType:deviceType
+
 					}
 
 					auditDetails.push(detail);
@@ -903,6 +969,7 @@ define([
 							return;
 						}
 						//Upload the Store details to the Appiyo server
+						// console.log(temp123);
 						inswit.executeProcess(processVariables, {
 							success: function(response){
 								if(response.Error == "0"){

@@ -121,6 +121,14 @@
 	width: 100%;
 	padding: 5px;
 }
+.reason_status select{
+	width: 70%;
+	padding: 5px;
+	
+}
+.reason_status{
+	margin: 10px 0;
+}
 .audits .resource_content{
 	vertical-align: super;
 	display: inline-block;
@@ -638,7 +646,7 @@
 .audits .execution_checkbox{
     margin-left: -18px;
     margin-top: 4px;
-   // position: absolute;
+  
    vertical-align: -2px;
 }
 .audits .non_brand_txt {

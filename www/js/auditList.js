@@ -179,6 +179,15 @@ define([
 					inswit.fastInterval=response.ProcessVariables.fastInterval|| 1000;
 					//-----------------------------------------------------------------------------//
 
+					inswit.IS_GILLETE_CHANGE = response.ProcessVariables.isSpecialGillete||false;
+					inswit.GILLETE_REASON_TITLE = response.ProcessVariables.reasonNorm||false;
+					inswit.GILLETE_DEVICETYPE_TITLE = response.ProcessVariables.deviceNorm||false;
+
+					 var deviceTypes = response.ProcessVariables.deviceTypeArray||[];
+					 var reasons = response.ProcessVariables.reasonArray||[];
+
+					 LocalStorage.setAuditReasons(reasons);
+					 LocalStorage.setDeviceTypes(deviceTypes);
 
 					LocalStorage.setGpsTimeOut(inswit.TIMEOUT);
 			    	LocalStorage.setNetworkGpsTimeout(inswit.TIMEOUT); // Mobile Network Timeout configuration.

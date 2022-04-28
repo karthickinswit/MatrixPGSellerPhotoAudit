@@ -26,7 +26,7 @@ function createLocAuditTable(tx, success, error) {
  * This method create table to completed audit details.
  */
 function createCompProductTable(tx, success, error) {
-    var createStatement = "CREATE TABLE IF NOT EXISTS mxpg_comp_products(store_id TEXT, store_name TEXT, product_id TEXT, product_name TEXT, image TEXT, image_uri TEXT, opt_image_uri TEXT,audit_id TEXT, priority NUMBER, image_id, opt_image_id, non_execution TEXT, qr_code TEXT,image_capture_time TEXT,image_capture_time2 TEXT)";
+    var createStatement = "CREATE TABLE IF NOT EXISTS mxpg_comp_products(store_id TEXT, store_name TEXT, product_id TEXT, product_name TEXT, image TEXT, image_uri TEXT, opt_image_uri TEXT,audit_id TEXT, priority NUMBER, image_id, opt_image_id, non_execution TEXT, qr_code TEXT,image_capture_time TEXT,image_capture_time2 TEXT,reason TEXT,inst_device TEXT,space_photo_uri TEXT,space_photo_id TEXT,dev_type TEXT)";
     tx.executeSql(createStatement, [], success, error);
     var createIndex = "CREATE UNIQUE INDEX compProductIndex ON mxpg_comp_products(audit_id, store_id, product_id)";
     tx.executeSql(createIndex);
@@ -87,10 +87,15 @@ function populateCompProductTable(db, product, callback) {
     var qrCode = product.qrCode || "";
     var imgCaptureTime1=product.imgCaptureTime1||"";
     var imgCaptureTime2=product.imgCaptureTime2||"";
+    var reason = product.reason||"";
+    var installDevice = product.installDevice||"";
+    var spacePhoto = product.space_photo_uri||"";
+    var deviceType = product.deviceType||"";
+
     db.transaction(function(tx){
 
-        tx.executeSql('INSERT OR replace INTO  mxpg_comp_products(store_id, store_name, product_id, product_name, image, image_uri, opt_image_uri, audit_id, priority, image_id, opt_image_id, non_execution, qr_code,image_capture_time,image_capture_time2) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);',
-            [storeId, storeName, pId, productName, image, imageURI, optImageURI, auditId, priority, imageId, optImageId, nonExecution, qrCode,imgCaptureTime1,imgCaptureTime2], function(){
+        tx.executeSql('INSERT OR replace INTO  mxpg_comp_products(store_id, store_name, product_id, product_name, image, image_uri, opt_image_uri, audit_id, priority, image_id, opt_image_id, non_execution, qr_code,image_capture_time,image_capture_time2,reason,inst_device,space_photo_uri,dev_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);',
+            [storeId, storeName, pId, productName, image, imageURI, optImageURI, auditId, priority, imageId, optImageId, nonExecution, qrCode,imgCaptureTime1,imgCaptureTime2,reason,installDevice,spacePhoto,deviceType], function(){
                 callback();
             }, function(a, e){
                 console.log(e);
@@ -149,7 +154,7 @@ function selectAllCompProducts(db, auditId, storeId, fn) {
 
 function selectCompProducts(db, auditId, storeId, fn) {
 
-    var query = "select DISTINCT product_id, product_name, image_uri, opt_image_uri, priority, image_id, opt_image_id, qr_code from mxpg_comp_products where audit_id='" + auditId + "' AND store_id='" + storeId + "'";
+    var query = "select DISTINCT product_id, product_name, image_uri, opt_image_uri, priority, image_id, opt_image_id, qr_code,space_photo_uri,space_photo_id from mxpg_comp_products where audit_id='" + auditId + "' AND store_id='" + storeId + "'";
     
     db.transaction(function(tx){
         tx.executeSql(query , [], function(tx, response) {
@@ -186,7 +191,7 @@ function clearCompProducts(db, auditId, storeId, fn) {
 
 function selectProductsToVerify(db, auditId, storeId, productId, fn) {
 
-    var query = "select store_id as storeId, product_id as productId, product_name as productName, image, image_uri as imageURI, opt_image_uri as optImageURI, audit_id as auditId, priority, non_execution as nonExecution, qr_code as qrCode from mxpg_comp_products where audit_id='" + auditId + "'";
+    var query = "select store_id as storeId, product_id as productId, product_name as productName, image, image_uri as imageURI, opt_image_uri as optImageURI, audit_id as auditId, priority, non_execution as nonExecution, qr_code as qrCode,reason,inst_device as installDevice,space_photo_uri as spaceImage,dev_type as deviceType from mxpg_comp_products where audit_id='" + auditId + "'";
 
     if(storeId){
         query += " AND store_id='" + storeId + "'";
@@ -434,6 +439,33 @@ function updateProductImageId(db, auditId, storeId, productId, imageId, success,
        // });
     });
 }
+
+
+
+/**
+ * This method update Gillete product Space photo of the store.
+ * @param  {object} db
+ * @param  {json} auditId
+ * @param  {json} storeId
+ * @param  {json} productId
+ * @param  {json} imageId
+ * @param  {function} callback function
+ */
+ function updateGilleteProductImageId(db, auditId, storeId, productId, imageId, success, error){
+    // var query = 'select priority from mxpg_comp_products WHERE audit_id=? AND store_id=? AND product_id=?;';
+     
+     db.transaction(function(tx){
+         //tx.executeSql(query, [auditId, storeId, productId], function(tx, response){
+ 
+         tx.executeSql('UPDATE mxpg_comp_products SET space_photo_id=? WHERE audit_id=? AND store_id=? AND product_id=?;',
+             [imageId, auditId, storeId, productId], success, error
+         );
+        // });
+     });
+ }
+ 
+
+
 
 /**
  * This method update product photo of the store.

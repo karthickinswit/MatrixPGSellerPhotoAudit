@@ -228,6 +228,34 @@ define(["backbone", "bootstrap", "mustache"], function() {
             
             setTimeout(function(){
                 var callback = function(product){
+
+
+                    if(pId=="61"&&inswit.IS_GILLETE_CHANGE)
+                    {
+                        require(["normGillete"], function(Norm) {
+
+                            var priority = product.priority;
+                            var isHotspot = false;
+                            if(priority == "10"){
+                                isHotspot = true;
+                            }
+                            
+                            var NormModel = new Norm.Model({
+                                "mId":mId,
+                                "hotspotPid": hotspotPid,
+                                "isHotspot": isHotspot,
+                                "isVerify":isVerify
+                            });
+                            var NormView = new Norm.View({
+                                model: NormModel
+                            });
+                            NormView.showNorms(mId, pId, product, hotspotPid);
+    
+                            that.appendView(NormView);
+    
+                        });
+                    }
+                    else {
                     require(["norm"], function(Norm) {
 
                         var priority = product.priority;
@@ -235,6 +263,9 @@ define(["backbone", "bootstrap", "mustache"], function() {
                         if(priority == "10"){
                             isHotspot = true;
                         }
+
+
+
                         var NormModel = new Norm.Model({
                             "mId":mId,
                             "hotspotPid": hotspotPid,
@@ -249,6 +280,7 @@ define(["backbone", "bootstrap", "mustache"], function() {
                         that.appendView(NormView);
 
                     });
+                }
                 }
 
                 getProductName(db, mId, pId, callback);

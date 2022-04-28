@@ -1,7 +1,7 @@
 // var PROJECTID = "1c62737aae0d11e59d090050569cb68c";   //development
 //var PROJECTID = "97677c1832bc11e5a9bb0050569ccb08"; //demo
-var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
-// var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
+//  var PROJECTID = "d27520ec813311e5a9bb0050569ccb08"; //process
+  var PROJECTID = "c7806c3ef39a11e69d090050569cb68c" //production - photoAudit
 var inswit = {
 
 	URI: "https://www.appiyo.com/",
@@ -19,7 +19,7 @@ var inswit = {
 		password: "",
 	},
 	
-	VERSION : "2.9",
+	VERSION : "3.0",
 
 	ISSELLERAUDIT: true,
 
@@ -179,6 +179,14 @@ var inswit = {
 	START_AUDIT_TIME:"",
 
 	END_AUDIT_TIME:"",
+
+	IS_GILLETE_CHANGE : true,
+
+//Changes for only the gillete Product Non executed Changes
+
+	GILLETE_REASON_TITLE : "",
+
+	GILLETE_DEVICETYPE_TITLE : "",
 
 	provider_type:"gps",
 //watch Position Params

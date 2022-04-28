@@ -21,7 +21,8 @@ define([
 			"click .product_done": "done",
 			"click .back": "back",
 			"change .execution_checkbox": "nonExecutionBrand",
-			"click .scan_qr": "scanQR"
+			"click .scan_qr": "scanQR",
+			"change .aud_confirmation" : "toggleConfirmationBlock",
 		},
 
 		showNorms: function(mId, pId, product, hotspotPid){
@@ -53,40 +54,69 @@ define([
             	isFrontage = true;
             }
 
+			var deviceTypeTitle = inswit.GILLETE_DEVICETYPE_TITLE;
+			var reasonTitle = inswit.GILLETE_REASON_TITLE;
+
 			//Show completed norms(With user modified values)
 			var fn = function(results){
 				if(results.length > 0){
-					require(['templates/t_audit_questions'], function(template){
+					require(['templates/t_audit_questions_gillete'], function(template){
 
 						selectProduct(db, pId, channelId, function(product){
 
 							var isImage = false;
-							var imageURI = results[0].imageURI || "";
-							if(imageURI){
-								isImage = true;
-							}
+							var isSpaceImage=false;
+							var spaceImageURI="";
+							takeOptionalPhoto = false;
+							var nonExecution=(results[0].nonExecution == "true")? true:false;
 
-							var isOptImage = false;
-							if(priority == 10){
-								var optImageURI = results[0].optImageURI || "";
-								if(optImageURI){
+							if(nonExecution)
+							{
+							var selectedReasonId = results[0].reason || "";
+							var installDevice = results[0].installDevice;
+								if(installDevice=="Yes"){
+									isSpaceImage=true;
+									spaceImageURI=results[0].spaceImage;
+									var selectedDeviceType =  results[0].deviceType;
+
+								}
+									
+							}
+							else {
+							
+								var imageURI = results[0].imageURI || "";
+								if(imageURI){
+								isImage = true;
+								}
+
+								var isOptImage = false;
+								if(priority == 10){
+									var optImageURI = results[0].optImageURI || "";
+									if(optImageURI){
 									isOptImage = true;
+									}
+								}
+							
+								var takePhoto = false;
+								if(!imageURI && priority == 6){
+									takePhoto = true;
+								}
+
+								if(!imageURI && priority == 10){
+									takePhoto = true;
+								}
+
+								takeOptionalPhoto = false;
+								if(!optImageURI && priority == 10){
+								takeOptionalPhoto = true;
 								}
 							}
+							var reasons= [];
 							
-							var takePhoto = false;
-							if(!imageURI && priority == 6){
-								takePhoto = true;
-							}
-
-							if(!imageURI && priority == 10){
-								takePhoto = true;
-							}
-
-							takeOptionalPhoto = false;
-							if(!optImageURI && priority == 10){
-								takeOptionalPhoto = true;
-							}
+							var deviceTypes=[];
+							
+							reasons=LocalStorage.getAuditReasons();
+							deviceTypes=LocalStorage.getDeviceTypes();
 
 							var html = Mustache.to_html(
 								template,
@@ -104,7 +134,13 @@ define([
 									"isHotspot": that.model.get("isHotspot") || false,
 									"priority": priority,
 									"nonExecution": (results[0].nonExecution == "true")? true:false,
-									"qrCode": results[0].qrCode
+									"reasons":reasons,
+									"qrCode": results[0].qrCode,
+									"deviceTypes":deviceTypes,
+									"isSpaceImage":isSpaceImage,
+									"spaceImageURI":spaceImageURI,
+									"deviceTypeTitle":deviceTypeTitle,
+									"reasonTitle": reasonTitle
 
 								}
 							);
@@ -112,10 +148,42 @@ define([
 							that.$el.empty().append(html);
 
 							var nonExecution = results[0].nonExecution;
+							var reason = results[0].reason;
+							var deviceType = results[0].deviceType;
+							var installDevice = results[0].installDevice.toLowerCase();
                             var isChecked = (nonExecution == "true")? true:false;
                             if(isChecked) {
                                 that.$el.find(".execution_checkbox").attr("checked", true);
+								that.$el.find(".execution_checkbox").prop('disabled', true)
                                 that.$el.find(".take_product_photo, .take_second_product_photo").prop('disabled', true);
+								that.$el.find(".take_product_photo, .take_second_product_photo").prop('visible', false);
+								that.$el.find(".gillete_product").css({"display":"none"});
+								that.$el.find(".gillete_product_non").css({"display":"block"});
+								
+								// console.log();
+								
+								
+								that.$el.find(".con_adt_option").find("#"+installDevice).prop("checked", true);
+								if(installDevice=="no")
+								{
+									 that.$el.find(".audit_reason_block").css({"display":"block"});
+									 that.$el.find(".device_yes_block").css({"display":"none"});
+									 
+									 that.$el.find(".audit_reason .audit_reason"+reason).attr("selected",true);
+									// this.$el.find(".audit_reason_block").css({"display":"block"});
+								}
+								else {
+									that.$el.find(" .audit_device_type"+deviceType).attr("selected",true);
+									that.$el.find(".audit_reason_block").css({"display":"none"});
+								}
+								
+
+
+								// console.log(that.$el.find(".con_adt_status "));
+				 
+							    that.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr,.audit_reason,.audit_device_type,.aud_confirmation").prop('disabled', true);
+				 
+							 
                             }else if(!isChecked && isImage) {
                                 that.$el.find(".execution_checkbox").attr("disabled", true);
                             }
@@ -134,18 +202,27 @@ define([
 				}else{
 
 					selectProduct(db, pId, channelId, function(product){
-						require(['templates/t_audit_questions'], function(template){
+						require(['templates/t_audit_questions_gillete'], function(template){
 							var takePhoto = false;
+							var isSpaceImage=false;
+							var spaceImageURI="";
 							takeOptionalPhoto = false;
 							if(product.priority == 6){
 								takePhoto = true;
 							}
-							
 
 							if(priority == 10){
 								takePhoto = true;
 								takeOptionalPhoto = true;
 							}
+							var reasons= [];
+							
+							var deviceTypes=[];
+							reasons=LocalStorage.getAuditReasons();
+							deviceTypes=LocalStorage.getDeviceTypes();
+							
+							
+
 
 							var html = Mustache.to_html(
 								template,
@@ -158,7 +235,13 @@ define([
 									"takeOptionalPhoto":takeOptionalPhoto,
 									"isHotspot": that.model.get("isHotspot") || false,
 									"element":"retake_product_photo",
-									"priority": priority
+									"priority": priority,
+									"reasons":reasons,
+									"deviceTypes":deviceTypes,
+									"isSpaceImage":false,
+									"spaceImageURI":spaceImageURI,
+									"deviceTypeTitle":deviceTypeTitle,
+									"reasonTitle": reasonTitle
 								}
 							);
 							that.$el.empty().append(html);
@@ -255,7 +338,15 @@ define([
 		update: function(mId, auditId, storeId, channelId){
 			var that = this;
 			var nonExecution;
+			var installDevice=that.$el.find('.aud_confirmation:checked').val();
+			console.log("install Device "+installDevice);
+			var selectedReason=that.$el.find(".audit_reason option:selected").val()??"";
+			console.log("selectedReason "+selectedReason);
+			var selectedDeviceType=that.$el.find(".audit_device_type option:selected").val()??"";
+			console.log("selectedDeviceType "+selectedDeviceType);
+			
 
+			
 			var takePhoto = "no";
 			var ele = that.$el.find(".norms");
 			var priority = ele.attr("href");
@@ -263,6 +354,7 @@ define([
 			if(priority == 10 || priority == 6){
 				takePhoto = "yes"
 			}
+			
 
 			if(that.$el.find("#frontage_applicable").val()){
 				takePhoto = that.$el.find("#frontage_applicable").val().toLowerCase() || "no";
@@ -272,28 +364,35 @@ define([
 
 				var image = $(".photo_block img").attr("src") || "";
 				var optImage = $(".opt_photo_block img").attr("src") || "";
+				
 
                 var isHotspot = that.model.get("isHotspot");
 
-                if(isHotspot) {
-                    if(image.length > 0 && optImage.length == 0) {
-                        inswit.alert(inswit.ErrorMessages.hotspotCloseup);
-                        return;
-                    }else if (image.length == 0 && optImage.length > 0) {
-                        inswit.alert(inswit.ErrorMessages.hotspotLongShot);
-                        return;
-                    }
-                }
+                // if(isHotspot) {
+                //     if(image.length > 0 && optImage.length == 0) {
+                //         inswit.alert(inswit.ErrorMessages.hotspotCloseup);
+                //         return;
+                //     }else if (image.length == 0 && optImage.length > 0) {
+                //         inswit.alert(inswit.ErrorMessages.hotspotLongShot);
+                //         return;
+                //     }
+                // }
 
 				if(takePhoto == "no"){
 					image = "";
 				}
+				
 
                 var isChecked = that.$el.find(".execution_checkbox").is(':checked')
 				if(image.length == 0 && !isChecked) {
                     inswit.alert(inswit.ErrorMessages.checkProceed);
                     return;
 				}
+				if(isChecked&&installDevice=="1"&&image=="")
+			{
+				inswit.alert("Please take a Space Photo")
+					return;				
+			}
 
 				var pId = that.model.get("pId");
                 var productName = that.model.get("productName");
@@ -310,9 +409,9 @@ define([
                 product.isCompleted = false;
                 product.image = "";
                 product.imageId = "";
-                product.imageURI = image || "";
+                product.imageURI =  !isChecked?image : "";
                 product.optImageId = "";
-                product.optImageURI = optImage || "";
+                product.optImageURI =   "";
                 product.priority = priority;
                 product.pId = pId;
                 product.productName = productName;
@@ -320,6 +419,20 @@ define([
                 product.qrCode = qrCode;
 				product.imgCaptureTime1=(image.replace(/^.*[\\\/]/, '').split('.')[0])||"";
 				product.imgCaptureTime2=(optImage.replace(/^.*[\\\/]/, '').split('.')[0])||"";
+
+				if(!isChecked){
+				product.reason = "";
+				product.installDevice = "";
+				product.space_photo_uri = "";
+				product.deviceType = "";
+				}
+				else {
+				product.reason = installDevice=="0"?selectedReason:"";
+				product.installDevice = (installDevice=="1")?"Yes":"No";
+				product.space_photo_uri = isChecked?image:"";
+				product.deviceType = installDevice=="1"?selectedDeviceType:"";
+				}
+
 
                 var callback = function(){
 
@@ -377,13 +490,42 @@ define([
 		},
 
 		nonExecutionBrand: function() {
+
 		    var element = this.$el.find(".execution_checkbox");
 		    if(element.is(':checked')) {
-		       this.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr").prop('disabled', true);
+		    //    this.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr,").prop('disabled', true);
+			   this.$el.find(".gillete_product").css({"display":"none"});
+			   this.$el.find(".gillete_product_non").css({"display":"block"});
+
+			//    this.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr").prop('disabled', true);
+
 		    }else {
-		        this.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr").prop('disabled', false);
+		        // this.$el.find(".take_product_photo, .take_second_product_photo, .scan_qr, ").prop('disabled', false);
+				this.$el.find(".gillete_product").css({"display":"block"});
+			   this.$el.find(".gillete_product_non").css({"display":"none"});
 		    }
 
+		},
+		toggleConfirmationBlock: function(event) {
+			if($(event.target).val() == 1){
+				
+				this.$el.find(".device_yes_block").css({"display":"block"});
+				this.$el.find(".audit_reason_block").css({"display":"none"});
+			    // this.$el.find(".continue_audit").css({"display":"block"});
+			    // this.$el.find(".audit_no_block, .finish_audit").css({"display":"none"});
+			    // $(".non_co_auditer").css({"display":"none"});
+			    // $(".audit_no").prop("selectedIndex", 0);
+			console.log(	this.$el.find('.aud_confirmation:checked').val());
+			}else{
+				this.$el.find(".device_yes_block").css({"display":"none"});
+				
+				this.$el.find(".audit_reason_block").css({"display":"block"});
+				// this.$el.find(".continue_audit").css({"display":"none"});
+			    // this.$el.find(".audit_no_block, .finish_audit").css({"display":"block"});
+			    // $(".non_co_auditer").css({"display":"none"});
+				console.log(	this.$el.find('.aud_confirmation:checked').val());
+			}
+			this.refreshScroll("continue_audit_wrapper");
 		},
 
 		scanQR: function() {
